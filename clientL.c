@@ -18,7 +18,8 @@ int main(int argc, char *argv[]) {
     printf("Début programme\n");
 
     //Création de la socket
-    //dS = descripteur de socket
+    //int socket(int domaine, int type, int protocole)
+    //Renvoie le descripteur de socket si la création est réussi et -1 si elle échoue
     //PF_INET = Protocole IP
     //SOCK_STREAM = Protocole TCP
     //0 = Protocole par défaut
@@ -35,12 +36,16 @@ int main(int argc, char *argv[]) {
     aS.sin_family = AF_INET;
 
     //Converti l'adresse IP en format réseau
+    //int inet_pton(int af, const char *src, void *dst)
+    //Renvoie 1 si la conversion est réussi et 0 si elle échoue
     //INADDR_ANY = adresse IP de la machine
     //argv[1] = adresse IP du serveur
     //&aS.sin_addr = adresse du serveur
     inet_pton(AF_INET,argv[1],&(aS.sin_addr));
 
     //Converti le port en format réseau
+    //unsigned short htons(unsigned short hostshort)
+    //Renvoie le port en format réseau en cas de succès et 0 en cas d'échec
     //argv[2] = port du serveur
     aS.sin_port = htons(atoi(argv[2]));
 
@@ -48,6 +53,8 @@ int main(int argc, char *argv[]) {
     socklen_t lgA = sizeof(struct sockaddr_in);
 
     //Connecte la socket au serveur
+    //int connect(int dS, struct sockaddr *aS, socklen_t lgA)
+    //Renvoie 0 si la connexion est réussi et -1 si elle échoue
     //dS = descripteur de socket
     //aS = adresse du serveur
     //lgA = taille de la structure aS
@@ -55,6 +62,7 @@ int main(int argc, char *argv[]) {
 
     printf("Socket Connecté\n");
 
+    //Envoie le nombre de message au serveur
     int nbMessage = 2;
     while(nbMessage != 0){
             
@@ -67,6 +75,8 @@ int main(int argc, char *argv[]) {
         else{
 
             //Envoie le message au serveur
+            //int send(int dS, const void *m, size_t lg, int flags)
+            //Renvoie le nombre d'octet envoyé si la connexion est réussi et -1 si elle échoue
             //dS = descripteur de socket
             //m = message
             //strlen(m) + 1 = taille du message

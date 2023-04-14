@@ -16,6 +16,8 @@ int main(int argc, char *argv[]) {
     printf("Début programme\n");
 
     //Création de la socket
+    //int socket(int domaine, int type, int protocole)
+    //Renvoie le descripteur de socket si la création est réussi et -1 si elle échoue
     //dS = descripteur de socket
     //PF_INET = Protocole IP
     //SOCK_STREAM = Protocole TCP
@@ -36,6 +38,8 @@ int main(int argc, char *argv[]) {
     aD.sin_addr.s_addr = INADDR_ANY ;
 
     //Converti le port en format réseau
+    //unsigned short htons(unsigned short hostshort)
+    //Renvoie le port en format réseau en cas de succès et 0 en cas d'échec
     //argv[1] = port du serveur
     aD.sin_port = htons(atoi(argv[1])) ;
 
@@ -127,6 +131,6 @@ int main(int argc, char *argv[]) {
     //dS = descripteur de socket
     //2 = fermeture de la connexion
     shutdown(dS, 2);
-    
+
     printf("Fin du programme\n");
 }

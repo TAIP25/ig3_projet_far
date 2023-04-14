@@ -94,6 +94,8 @@ int main(int argc, char *argv[]) {
     int r;
 
     //Reçoit la réponse du serveur
+    //int recv(int dS, void *r, size_t lg, int flags)
+    //Renvoie le nombre d'octet reçu si la connexion est réussi et -1 si elle échoue
     //dS = descripteur de socket
     //&r = réponse
     //sizeof(int) = taille de la réponse
@@ -103,6 +105,8 @@ int main(int argc, char *argv[]) {
     printf("Réponse reçue (nb octets): %d\n", r) ;
 
     //Ferme la connexion
+    //int shutdown(int dS, int how)
+    //Renvoie 0 si la fermeture est réussi et -1 si elle échoue
     //dS = descripteur de socket
     //2 = fermeture des deux sens
     shutdown(dS,2) ;

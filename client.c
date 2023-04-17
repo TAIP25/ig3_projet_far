@@ -4,8 +4,20 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#define MAXCHARS 255
 
 int main(int argc, char *argv[]) {
+
+    //VERIFICATION DU NOMBRE D'ARGUMENTS
+    //argv[0] = client
+    //argv[1] = adresse IP du serveur
+    //argv[2] = port du serveur
+    //argv[3] = le numéro du client (1 ou 2)
+    if (argc != 4) {
+        printf("Erreur nombre d'argument\n");
+        printf("Usage: %s <adresse IP> <port> <numéro du client>\n", argv[0]);
+        exit(0);
+    }
 
     //CREATION DE LA SOCKET DU CLIENT
 
@@ -68,10 +80,104 @@ int main(int argc, char *argv[]) {
     // the while(1) loop is used to create an infinite loop that repeatedly prompts the user to enter a message,
     // sends the message to the server, and waits for a response from the server. The loop continues until the user enters the message "fin",
     // at which point the loop is terminated using a break statement.
+    
+    if (atoi(argv[3]) == 1) {
+        printf("Vous êtes le client 1, vous commencez la conversation\n");
+    }
+    else{
+        printf("Vous êtes le client 2, vous attendez la réponse du client 1\n");
+    }
+    
     while (1) {
+
+        char message[MAXCHARS] = {0};
+
+        // Si c'est le client 1, il commence la conversation
+        if (atoi(argv[3]) == 1) {
+            printf("Entrez votre message : ");
+            
+            fgets(message, MAXCHARS, stdin);
+            if(message[strlen(message) - 1] == '\n'){
+                message[strlen(message) - 1] = '\0';
+            }
+
+            if(strlen(message) > MAXCHARS){
+                printf("Erreur message trop grand\n");
+            }
+            else{
+
+                //Envoie le message au serveur
+                //int send(int dS, const void *m, size_t lg, int flags)
+                //Renvoie le nombre d'octet envoyé si la connexion est réussi et -1 si elle échoue
+                //dS = descripteur de socket
+                //m = message
+                //strlen(m) + 1 = taille du message
+                //0 = protocole par défaut
+                send(client_socket, message, strlen(message) + 1 , 0);
+                
+                printf("Message envoyé\n");
+
+                //Le client attend la réponse du serveur
+                printf("En attente de la réponse du client 2\n");
+
+                int recvR = recv(client_socket, message, sizeof(message), 0) - 1;
+
+                if (recvR == -1 || strcmp(message, "fin") == 0) {
+                    perror("Erreur lors de la réception du message ou fin de la conversation");
+                    exit(0);
+                }
+
+                printf("Réponse du client 2 : %s\n", message);
+            }
+
+        }
+        else{
+
+            //Le client attend la réponse du serveur
+            int recvR = recv(client_socket, message, sizeof(message), 0) - 1;
+
+            if (recvR == -1 || strcmp(message, "fin") == 0) {
+                perror("Erreur lors de la réception du message ou fin de la conversation");
+                exit(0);
+            }
+
+            printf("Réponse du client 1 : %s\n", message);
+
+            printf("Entrez votre message : ");
+
+            fgets(message, MAXCHARS, stdin);
+            if(message[strlen(message) - 1] == '\n'){
+                message[strlen(message) - 1] = '\0';
+            }
+
+            if(strlen(message) > MAXCHARS){
+                printf("Erreur message trop grand\n");
+            }
+            else{
+
+                //Envoie le message au serveur
+                //int send(int dS, const void *m, size_t lg, int flags)
+                //Renvoie le nombre d'octet envoyé si la connexion est réussi et -1 si elle échoue
+                //dS = descripteur de socket
+                //m = message
+                //strlen(m) + 1 = taille du message
+                //0 = protocole par défaut
+                send(client_socket, message, strlen(message) + 1 , 0);
+                
+                printf("Message envoyé\n");
+
+                //Le client attend la réponse du serveur
+                printf("En attente de la réponse du client 1\n");
+            }
+
+
+        }
+           
+
+        /*
         // Le client envoie un message
         printf("Saisir un message : ");
-        char message[1024] = {0};
+        char message[1024];
         fgets(message, sizeof(message), stdin);
         message[strcspn(message, "\n")] = 0;
         write(client_socket, message, strlen(message));
@@ -85,6 +191,7 @@ int main(int argc, char *argv[]) {
         char buffer[1024] = {0};
         int message_size = read(client_socket, buffer, sizeof(buffer));
         printf("Réponse du serveur : %s\n", buffer);
+        */
     }
 
     // Fermeture de la socket du client

@@ -97,8 +97,6 @@ int main(int argc, char *argv[]) {
             //msg = message reçu
             //sizeof(msg) = taille du message (ici 32)
             //0 = flags
-            //int recvR1 = recv(dSC1, msg1, sizeof(msg1), 0) - 1;
-            //int recvR2 = recv(dSC2, msg2, sizeof(msg2), 0) - 1;
             int recvC1 = recv(dSC1, msg, sizeof(msg), 0) - 1;
 
             //Vérifie si la connexion est interrompu ou si une erreur est survenue
@@ -120,7 +118,6 @@ int main(int argc, char *argv[]) {
             //&recvR = message envoyé
             //sizeof(int) = taille du message (ici 4)
             //0 = flags
-            //send(dSC1, &recvR, sizeof(int), 0);
             send(dSC2, msg, sizeof(msg), 0);
 
             printf("Message envoyé\n");

@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <pthread.h> 
 #define MAXCHARS 255
 
 int main(int argc, char *argv[]) {

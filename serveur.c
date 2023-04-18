@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
     }
 
     printf("Début programme\n");
-
+    
     //Création de la structure aS
     //aS = adresse du serveur
     struct sockaddr_in aS;
@@ -63,108 +63,101 @@ int main(int argc, char *argv[]) {
 
     printf("Mode écoute\n");
 
-    //Création de la structure aC
-    //aC = adresse du client
-    struct sockaddr_in aC1;
-    struct sockaddr_in aC2;
+    while(1){
+        //Création de la structure aC
+        //aC = adresse du client
+        struct sockaddr_in aC1;
+        struct sockaddr_in aC2;
 
-    //Stocke la taille de la structure aC dans lg
-    socklen_t lg1 = sizeof(struct sockaddr_in);
-    socklen_t lg2 = sizeof(struct sockaddr_in);
+        //Stocke la taille de la structure aC dans lg
+        socklen_t lg1 = sizeof(struct sockaddr_in);
+        socklen_t lg2 = sizeof(struct sockaddr_in);
 
-    //Accepte la connexion du client
-    //int accept(int dS, struct sockaddr *aC, socklen_t *lg)
-    //Renvoie le descripteur de socket du client
-    //dS = descripteur de socket
-    //&aC = adresse du client
-    //&lg = l'adresse de la taille de la structure aC
-    int dSC1 = accept(dS, (struct sockaddr*) &aC1,&lg1);
-    printf("Le client 1 est connecté\n");
+        //Accepte la connexion du client
+        //int accept(int dS, struct sockaddr *aC, socklen_t *lg)
+        //Renvoie le descripteur de socket du client
+        //dS = descripteur de socket
+        //&aC = adresse du client
+        //&lg = l'adresse de la taille de la structure aC
+        int dSC1 = accept(dS, (struct sockaddr*) &aC1,&lg1);
+        printf("Le client 1 est connecté\n");
 
-    int dSC2 = accept(dS, (struct sockaddr*) &aC2,&lg2);
-    printf("Le client 2 est connecté\n");
+        int dSC2 = accept(dS, (struct sockaddr*) &aC2,&lg2);
+        printf("Le client 2 est connecté\n");
 
-    char msg[255];
+        char msg[255];
 
-    int fin = 0;
+        int fin = 0;
 
-    while (!fin) {
-        //Reçoit un message du client 1
-        int recvC1 = recv(dSC1, msg, sizeof(msg), 0) - 1;
+        while (!fin) {
+            //Reçoit un message du client 1
+            //int recv(int dSC, void *msg, int lg, int flags)
+            //Renvoie le nombre d'octet reçu
+            //dSC = descripteur de socket du client
+            //msg = message reçu
+            //sizeof(msg) = taille du message (ici 32)
+            //0 = flags
+            //int recvR1 = recv(dSC1, msg1, sizeof(msg1), 0) - 1;
+            //int recvR2 = recv(dSC2, msg2, sizeof(msg2), 0) - 1;
+            int recvC1 = recv(dSC1, msg, sizeof(msg), 0) - 1;
 
-        //Vérifie si la connexion est interrompu ou si une erreur est survenue
-        if(recvC1 == 0 || recvC1 == -1){
-            perror("Erreur interruption de la connexion ou erreur du client 1");
-            break;
+            //Vérifie si la connexion est interrompu ou si une erreur est survenue
+            if(recvC1 == 0 || recvC1 == -1){
+                perror("Erreur interruption de la connexion ou erreur du client 1");
+                break;
+            }
+            else if (strcmp(msg, "fin") == 0) {
+                fin = 1;
+                printf("Le client 1 ferme la connexion\n");
+            }
+
+            printf("Message reçu : %s\n", msg);
+
+            //Envoie un message au client 2
+            //int send(int dSC, void *msg, int lg, int flags)
+            //Renvoie le nombre d'octet envoyé
+            //dSC = descripteur de socket du client
+            //&recvR = message envoyé
+            //sizeof(int) = taille du message (ici 4)
+            //0 = flags
+            //send(dSC1, &recvR, sizeof(int), 0);
+            send(dSC2, msg, sizeof(msg), 0);
+
+            printf("Message envoyé\n");
+
+            //Reçoit un message du client 2
+            int recvC2 = recv(dSC2, msg, sizeof(msg), 0) - 1;
+
+            //Vérifie si la connexion est interrompu ou si une erreur est survenue
+            if(recvC2 == 0 || recvC2 == -1){
+                perror("Erreur interruption de la connexion ou erreur du client 2");
+                break;
+            }
+            else if (strcmp(msg, "fin") == 0) {
+                fin = 1;
+                printf("Le client 2 ferme la connexion\n");
+            }
+
+            printf("Message reçu : %s\n", msg);
+
+            //Envoie un message au client 1
+            send(dSC1, msg, sizeof(msg), 0);
+
+            printf("Message envoyé\n");
         }
-        else if (strcmp(msg, "fin") == 0) {
-            fin = 1;
-        }
+        printf("Fin de la conversation\n");
 
-        printf("Message reçu : %s\n", msg);
+        //Ferme la connexion du client
+        //int shutdown(int dSC, int mode)
+        //Renvoie 0 si la fermeture est réussi et -1 si elle échoue
+        //dSC = descripteur de socket du client
+        //2 = fermeture de la connexion
+        shutdown(dSC1, 2); 
+        shutdown(dSC2, 2);
 
-        //Envoie un message au client 2
-        send(dSC2, msg, sizeof(msg), 0);
+        printf("Nouvelle conversation possible, en attente de client\n");
 
-        printf("Message envoyé\n");
-
-        //Reçoit un message du client 2
-        int recvC2 = recv(dSC2, msg, sizeof(msg), 0) - 1;
-
-        //Vérifie si la connexion est interrompu ou si une erreur est survenue
-        if(recvC2 == 0 || recvC2 == -1){
-            perror("Erreur interruption de la connexion ou erreur du client 2");
-            break;
-        }
-        else if (strcmp(msg, "fin") == 0) {
-            fin = 1;
-        }
-
-        printf("Message reçu : %s\n", msg);
-
-        //Envoie un message au client 1
-        send(dSC1, msg, sizeof(msg), 0);
-
-        printf("Message envoyé\n");
     }
-
-    //Reçoit un message du client
-    //int recv(int dSC, void *msg, int lg, int flags)
-    //Renvoie le nombre d'octet reçu
-    //dSC = descripteur de socket du client
-    //msg = message reçu
-    //sizeof(msg) = taille du message (ici 32)
-    //0 = flags
-    //int recvR1 = recv(dSC1, msg1, sizeof(msg1), 0) - 1;
-    //int recvR2 = recv(dSC2, msg2, sizeof(msg2), 0) - 1;
-
-    //Vérifie si la connexion est interrompu ou si une erreur est survenue
-    //Renvoie 0 si la connexion est interrompu et -1 si une erreur est survenue
-    /*
-    if(recvR1 == 0 || recvR1 == -1 || recvR2 == 0 || recvR2 == -1){
-        perror("Erreur interruption de la connexion ou erreur");
-        exit(0);
-    }
-    */
-
-    //Envoie un message au client
-    //int send(int dSC, void *msg, int lg, int flags)
-    //Renvoie le nombre d'octet envoyé
-    //dSC = descripteur de socket du client
-    //&recvR = message envoyé
-    //sizeof(int) = taille du message (ici 4)
-    //0 = flags
-    //send(dSC1, &recvR, sizeof(int), 0);
-
-    //printf("Message Envoyé\n");
-
-    //Ferme la connexion du client
-    //int shutdown(int dSC, int mode)
-    //Renvoie 0 si la fermeture est réussi et -1 si elle échoue
-    //dSC = descripteur de socket du client
-    //2 = fermeture de la connexion
-    shutdown(dSC1, 2); 
-    shutdown(dSC2, 2);
 
     //Ferme la connexion du serveur
     //int shutdown(int dS1, int mode)

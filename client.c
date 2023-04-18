@@ -75,11 +75,7 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    //DEMANDE DE MESSAGES
-
-    // the while(1) loop is used to create an infinite loop that repeatedly prompts the user to enter a message,
-    // sends the message to the server, and waits for a response from the server. The loop continues until the user enters the message "fin",
-    // at which point the loop is terminated using a break statement.
+    //CREATION DE LA CONVERSATION
     
     if (atoi(argv[3]) == 1) {
         printf("Vous êtes le client 1, vous commencez la conversation\n");
@@ -88,6 +84,7 @@ int main(int argc, char *argv[]) {
         printf("Vous êtes le client 2, vous attendez la réponse du client 1\n");
     }
     
+    // Boucle infinie pour la conversation
     while (1) {
 
         char message[MAXCHARS] = {0};
@@ -169,29 +166,7 @@ int main(int argc, char *argv[]) {
                 //Le client attend la réponse du serveur
                 printf("En attente de la réponse du client 1\n");
             }
-
-
         }
-           
-
-        /*
-        // Le client envoie un message
-        printf("Saisir un message : ");
-        char message[1024];
-        fgets(message, sizeof(message), stdin);
-        message[strcspn(message, "\n")] = 0;
-        write(client_socket, message, strlen(message));
-
-        
-        if (strcmp(message, "fin") == 0) { //compares the messgage to "fin". If the comparison == 0, end the conversation
-            break;
-        }
-
-        // Le client attend la réponse du serveur
-        char buffer[1024] = {0};
-        int message_size = read(client_socket, buffer, sizeof(buffer));
-        printf("Réponse du serveur : %s\n", buffer);
-        */
     }
 
     // Fermeture de la socket du client

@@ -1,12 +1,19 @@
- #include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <pthread.h>
+
 #define MAXCHARS 255
 
-void * messageReceive(void * r) {
+void * messageReceive(void* pClient_socket) {
+
+    //On récupère le descripteur de socket (on cast en long pour éviter un warning)
+    int client_socket = (long) pClient_socket;
+
+    char message[MAXCHARS] = {0};
 
     while(1) {
 
@@ -21,17 +28,19 @@ void * messageReceive(void * r) {
         printf("Réponse de votre interlocuteur : %s\n", message);
 
     }
-
 }
 
-void * messageSend(void * s) {
+void * messageSend(void * pClient_socket) {
+
+    //On récupère le descripteur de socket (on cast en long pour éviter un warning)
+    int client_socket = (long) pClient_socket;
 
     while(1) {
 
         char message[MAXCHARS] = {0};
 
         // N'importe quel client peut commencer la conversation
-        printf("C'est le début de votre conversation ");
+        printf("C'est le début de votre conversation\n");
                 
         fgets(message, MAXCHARS, stdin);
         if(message[strlen(message) - 1] == '\n'){
@@ -52,19 +61,10 @@ void * messageSend(void * s) {
             send(client_socket, message, strlen(message) + 1 , 0);
 
         }
-
     }
-    
-
 }
 
 int main(int argc, char *argv[]) {
-
-    pthread_t threadReceive;
-    pthread_create(threadReceive, NULL, messageReceive, NULL);
-
-    pthread_t threadSend;
-    pthread_create(threadSend, NULL, messageSend, NULL);
 
     //VERIFICATION DU NOMBRE D'ARGUMENTS
     //argv[0] = client
@@ -132,9 +132,20 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
+
+    //Cast en long pour éviter un warning
+    pthread_t threadReceive;
+    pthread_t threadSend;
+
+    pthread_create(&threadReceive, NULL, messageReceive, (void *) (long) client_socket);
+    pthread_create(&threadSend, NULL, messageSend, (void *) (long) client_socket);
+
+    pthread_join(threadReceive, NULL);
+    pthread_join(threadSend, NULL);
+
     // Fermeture de la socket du client
     close(client_socket);
 
     return 0;
 
-}   
+}

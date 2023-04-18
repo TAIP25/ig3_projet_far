@@ -28,7 +28,7 @@ void * C1toC2(void* dSC){
         //Vérifie si la connexion est interrompu ou si une erreur est survenue
         if(recvC1 == 0 || recvC1 == -1){
             perror("Erreur interruption de la connexion ou erreur du client 1");
-            break;
+            pthread_exit(0);
         }
         else if (strcmp(msg, "fin") == 0) {
             fin = 1;
@@ -51,7 +51,11 @@ void * C1toC2(void* dSC){
 }
 
 // Relaye les messages du client 2 au client 1
-void * C2toC1(void* dSC1, void* dSC2){
+void * C2toC1(void* dSC){
+    
+    int dSC1 = ((int*) dSC)[0];
+    int dSC2 = ((int*) dSC)[1];
+
     char msg[255];
     int fin = 0;
 
@@ -180,17 +184,20 @@ int main(int argc, char *argv[]) {
         pthread_create(&threadC1ToC2, NULL, C1toC2, (void *) dSC);
         pthread_create(&threadC2ToC1, NULL, C2toC1, (void *) dSC);
 
-        printf("Fin de la conversation\n");
+
+        
+
+       // printf("Fin de la conversation\n");
 
         //Ferme la connexion du client
         //int shutdown(int dSC, int mode)
         //Renvoie 0 si la fermeture est réussi et -1 si elle échoue
         //dSC = descripteur de socket du client
         //2 = fermeture de la connexion
-        shutdown(dSC1, 2); 
-        shutdown(dSC2, 2);
+        // shutdown(dSC1, 2); 
+        // shutdown(dSC2, 2);
 
-        printf("Nouvelle conversation possible, en attente de client\n");
+        //printf("Nouvelle conversation possible, en attente de client\n");
 
     }
 

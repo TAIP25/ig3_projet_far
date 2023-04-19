@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
         pthread_create(&threadC1ToC2, NULL, C1toC2, (void *) dSC);
         pthread_create(&threadC2ToC1, NULL, C2toC1, (void *) dSC);
 
-
+        
         
 
        // printf("Fin de la conversation\n");

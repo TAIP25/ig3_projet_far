@@ -25,7 +25,7 @@ void * messageReceive(void* pClient_socket) {
             exit(0);
         }
 
-        printf("Réponse de votre interlocuteur : %s\n", message);
+        printf("Interlocuteur : %s\n", message);
 
     }
 }
@@ -59,6 +59,11 @@ void * messageSend(void * pClient_socket) {
             //strlen(m) + 1 = taille du message
             //0 = protocole par défaut
             send(client_socket, message, strlen(message) + 1 , 0);
+            if (strcmp(message, "fin") == 0) {
+                perror("Erreur lors de la réception du message ou fin de la conversation");
+                exit(0);
+            }
+            
 
         }
     }

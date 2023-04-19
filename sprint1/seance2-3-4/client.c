@@ -34,13 +34,13 @@ void * messageSend(void * pClient_socket) {
 
     //On récupère le descripteur de socket (on cast en long pour éviter un warning)
     int client_socket = (long) pClient_socket;
+    
+    // N'importe quel client peut commencer la conversation
+        printf("C'est le début de votre conversation\n");
 
     while(1) {
 
         char message[MAXCHARS] = {0};
-
-        // N'importe quel client peut commencer la conversation
-        printf("C'est le début de votre conversation\n");
                 
         fgets(message, MAXCHARS, stdin);
         if(message[strlen(message) - 1] == '\n'){

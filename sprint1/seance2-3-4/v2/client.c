@@ -104,7 +104,6 @@ int main(int argc, char *argv[]) {
     }
     printf("Socket Créé\n");
 
-
     //DEFINITION DE L'ADRESSE IP ET DU PORT D'ECOUTE DU SERVEUR
 
     //adresse du serveur
@@ -129,9 +128,6 @@ int main(int argc, char *argv[]) {
     //argv[2] = port du serveur
     server_address.sin_port = htons(atoi(argv[2]));
 
-    //Stocke la taille de la structure aS dans lgA pour la fonction connect()
-    socklen_t lgA = sizeof(struct sockaddr_in);
-
     //Connecte la socket au serveur
     //connect(int dS, struct sockaddr *aS, socklen_t lgA)
     //Renvoie 0 si la connexion est réussi et -1 si elle échoue
@@ -143,7 +139,6 @@ int main(int argc, char *argv[]) {
         perror("Erreur lors de la connexion du client au serveur");
         exit(0);
     }
-
 
     //Cast en long pour éviter un warning
     pthread_t threadReceive;

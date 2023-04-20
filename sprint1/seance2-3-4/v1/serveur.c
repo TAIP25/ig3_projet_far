@@ -48,6 +48,8 @@ void * C1toC2(void* dSC){
 
         printf("Message envoyé\n");
     }
+
+    pthread_exit(0);
 }
 
 // Relaye les messages du client 2 au client 1
@@ -80,6 +82,8 @@ void * C2toC1(void* dSC){
 
         printf("Message envoyé\n");
     }
+
+    pthread_exit(0);
 }
 
 
@@ -183,22 +187,6 @@ int main(int argc, char *argv[]) {
         //creation des thread
         pthread_create(&threadC1ToC2, NULL, C1toC2, (void *) dSC);
         pthread_create(&threadC2ToC1, NULL, C2toC1, (void *) dSC);
-
-        
-        
-
-       // printf("Fin de la conversation\n");
-
-        //Ferme la connexion du client
-        //int shutdown(int dSC, int mode)
-        //Renvoie 0 si la fermeture est réussi et -1 si elle échoue
-        //dSC = descripteur de socket du client
-        //2 = fermeture de la connexion
-        // shutdown(dSC1, 2); 
-        // shutdown(dSC2, 2);
-
-        //printf("Nouvelle conversation possible, en attente de client\n");
-
     }
 
     //Ferme la connexion du serveur

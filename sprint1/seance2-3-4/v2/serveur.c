@@ -174,6 +174,9 @@ int main(int argc, char *argv[]) {
         lg[i] = sizeof(aC[i]);
     }
 
+    //Gestion des clients
+    //Dès qu'un client se connecte, un thread est créé pour gérer la connexion
+    
     int i = 0;
     while(1) {
         if(i == MAX_CLIENT){

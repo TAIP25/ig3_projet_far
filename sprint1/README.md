@@ -1,6 +1,21 @@
 # Livrable du sprint 1
 
+## Arborecense du sprint
+
+Pour nous organiser nous avons séparé le projet en 3 parties qui sont séparés dans des fichiers différents.
+
+### Partie 1
+Sujet de la séance 1: Un serveur relaie des messages textuels entre deux clients
+
+### Partie 2
+Sujet de la séance 2, 3 et 4 (v1): Utiliser le multi-threading pour gérer l’envoi de messages dans n’importe quel ordre.
+
+### Partie 3
+Sujet de la séance 2, 3 et 4 (v2): Mise en place d’un serveur qui puisse gérer n clients
+
 ## Description du sujet (v2 uniquement)
+
+Nous avons décidé d'explicité la version 2 du sujet pour mieux comprendre le fonctionnement du programme le plus abouti de ce sprint.
 
 ### Au global
 Mise en place d’un serveur qui puisse gérer n clients, pour cela mettre en place un tableau partagé pour stocker leurs identifiants sockets, par défaut, les messages arrivant depuis un client sont relayés à tous les autres présents.
@@ -13,25 +28,51 @@ Mise en place d’un serveur qui puisse gérer n clients, pour cela mettre en pl
 
 ## Protocole de communication (v2 uniquement)
 
+### Explication du diagramme de séquence
+
+Le diagramme de séquence ci-dessous explique le fonctionnement du serveur et des clients.
+
+Voici les 2 propriétés pour comprendre le diagramme de séquence:
+
+                ∀ x ∈ Client, x est un ClientLambda
+
+                Clients = {ClientLambda} ∪ AutresClients
+
+### Diagramme de séquence
+
 ```mermaid
 sequenceDiagram
-    participant Serveur
-    participant Client
-    Client->>Serveur: Connexion
-    loop Thread receive
-        Client->>Client: F
-    end
-    loop Thread send
-        Client->>Client: F
-    end
-    Serveur->>Client: Affecte un socket au client
-    Client->>Serveur: Envoie un message
-    Serveur->>Client: Envoie le message à tous les clients
-    Client->>Serveur: Déconnexion
-    Serveur->>Client: Supprime le socket du client
-```
+        participant ClientLambda
+        participant AutresClients
+        participant Serveur
+        Serveur->>Serveur: Lancement du serveur
+        loop Tant que le serveur est en fonctionnement
+                alt Mise en place de la connexion d'un client lambda
+                        ClientLambda->>ClientLambda: Initialisation
+                        ClientLambda->>Serveur: Connexion au serveur
+                        Serveur->>ClientLambda: Confirmation de la connexion
+                        par
+                                ClientLambda->>ClientLambda: Lancements des threads de réception et d'envoi
+                        and
+                                Serveur->>Serveur: Ajout de la socket du client lambda dans le tableau de sockets
+                                Serveur->>Serveur: Lancement du thread qui gère la réception puis l'envoi des messages du client lambda
+                        end
 
-## Description de l’architecture
+                else Si le message est envoyé par le client lambda
+                        ClientLambda->>Serveur: Envoi d'un message
+                        Serveur->>AutresClients: Diffusion du message aux autres clients
+                else Si le client lambda se déconnecte
+                        ClientLambda->>Serveur: Demande de déconnexion
+                        Serveur->>ClientLambda: Confirmation de la déconnexion
+                        par
+                                ClientLambda->>ClientLambda: Arrêt du client lambda
+                        and
+                                Serveur->>Serveur: Suppression de la socket du client lambda dans le tableau de sockets
+                        end
+                end
+        end
+        Serveur->>Serveur: Arrêt du serveur
+```
 
 ## Difficultés rencontrées
 
@@ -39,29 +80,12 @@ Pour la v2, nous avons rencontré des difficultés par rapport à la gestion de 
 
 ## Répartition du travail
 
-Tout d'abord avant de coder, nous avons décidé en amont comment chaque étapes clé devrait être traitées pour donner des indications claires à chacun de nous.
-
-Puis la répartition du travail s'est faite de manière à pouvoir travailler continuellement sur un même aspect du projet et à pouvoir respecter les délais imposés. Lorsque Léon travaille sur la partie serveur, Wayne travaille en parallèle sur la partie client pour une meilleure efficacité et rapidité. Bien sûr après chaque étape, il faut réunir les résultats et s'assurer que les concepts et les méthodes utilisées sont correctes. Un point de vue critique est alors apporté au moment où Wayne revoit la partie du serveur, et Léon revoit la partie du client.
-
-Il a été important de travailler au même moment l'un a coté de l'autre en cas de blocage et d'incertitude sur la manière de procéder. 
-
-Pour nous organiser nous avons séparé le projet en 3 parties qui sont séparés dans le fichier SPRINT1. 
-
-### Partie 1
-Sujet de la séance 1: Un serveur relaie des messages textuels entre deux clients
-
-### Partie 2
-Sujet de la séance 2 (v1): Utiliser le multi-threading pour gérer l’envoi de messages dans n’importe quel ordre.
-
-### Partie 3
-Sujet de la séance 2: (v2): Mise en place d’un serveur qui puisse gérer n clients
-
-Les détails du procédé de la partie finale est détaillé dans le fichier principal du sprint où un README est disponible. 
-
+Tout d'abord avant de coder, nous avons décidé en amont comment chaque étapes clé devrait être traitées pour donner des indications claires à chacun de nous. Puis la répartition du travail s'est faite de manière à pouvoir travailler continuellement sur un même aspect du projet et à pouvoir respecter les délais imposés. Lorsque Léon travaille sur la partie serveur, Wayne travaille en parallèle sur la partie client pour une meilleure efficacité et rapidité. Bien sûr après chaque étape, il faut réunir les résultats et s'assurer que les concepts et les méthodes utilisées sont correctes. Il a été important de travailler au même moment l'un a coté de l'autre en cas de blocage et d'incertitude sur la manière de procéder. Enfin, nous avons fait ensemble les différents tests et nous avons pu ainsi nous assurer que le projet fonctionne correctement.
 
 ## Compilation et exécution
 
-Pour compiler et exécuter le code, il suffit de se situer au bon endroit dans le fichier du SPRINT1. Chaque partie (1, 2 et 3) est localisé dans son fichier. 
+Pour compiler et exécuter le code, il suffit de se situer au bon endroit dans le fichier du SPRINT1. Chaque partie (1, 2 et 3) est localisé dans son fichier.
+Pour lancer le programme, voici les commandes et les tips pour exécuter correctement le programme:
 
 ### Tips
 
@@ -77,12 +101,12 @@ Pour compiler et exécuter le code, il suffit de se situer au bon endroit dans l
 
 6. Possibilité de changer certaines valeurs comme le nombre de clients maximum, le nombre de caractères maximum par message, etc ...
 
-Pour lancer le programme, voici les commandes à effectuer dans un terminal:
-
 ### Partie 1
+
 1. D'abord compiler le fichier serveur pour avoir un fichier C compilable: 
         
         gcc -Wall -o serveur serveur.c
+
 2. Ensuite lancer le serveur: 
         
         ./serveur <port du serveur choisi>  
@@ -96,6 +120,7 @@ Pour lancer le programme, voici les commandes à effectuer dans un terminal:
         ./client <adresse IP du serveur> <port du serveur>
   
 ### Partie 2
+
 1. D'abord compiler le fichier serveur pour avoir un fichier C compilable: 
 
         gcc -Wall -o serveur serveur.c
@@ -112,11 +137,12 @@ Pour lancer le programme, voici les commandes à effectuer dans un terminal:
 
         ./client <adresse IP du serveur> <port du serveur> 1
     
-5. Enfin lancer le client2:
+5. Enfin lancer le Client2:
 
         ./client <adresse IP du serveur> <port du serveur> 2
   
 ### Partie 3
+
 1. D'abord compiler le fichier serveur pour avoir un fichier C compilable: 
 
         gcc -Wall -o serveur serveur.c
@@ -131,7 +157,8 @@ Pour lancer le programme, voici les commandes à effectuer dans un terminal:
 
 4. Enfin lancer pour chaque client: 
 
-        ./client <adresse IP du serveur> <port du serveur> 
+        ./client <adresse IP du serveur> <port du serveur>
+
     NB: chaque client sera identifié sur le serveur automatiquement
     
     NB: le serveur peut gérer jusqu'à 10 clients pour le modifier, il faut modifier la valeur de la variable MAX_CLIENTS dans le fichier serveur.c

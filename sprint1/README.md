@@ -1,5 +1,32 @@
 # Livrable du sprint 1
 
+## Table des matières
+
+- [Arborecense du sprint](#arborecense-du-sprint)
+  - [Partie 1](#partie-1)
+  - [Partie 2](#partie-2)
+  - [Partie 3](#partie-3)
+- [Description du sujet (v2 uniquement)](#description-du-sujet-v2-uniquement)
+  - [Au global](#au-global)
+  - [Au niveau du serveur](#au-niveau-du-serveur)
+  - [Au niveau du client](#au-niveau-du-client)
+- [Protocole de communication (v2 uniquement)](#protocole-de-communication-v2-uniquement)
+  - [Explication du diagramme de séquence](#explication-du-diagramme-de-séquence)
+  - [Extrait de la documentation de mermaid](#extrait-de-la-documentation-de-mermaid)
+    - [Loop](#loop)
+    - [Alt](#alt)
+    - [Par](#par)
+  - [Rappel](#rappel)
+  - [Diagramme de séquence](#diagramme-de-séquence)
+- [Difficultés rencontrées](#difficultés-rencontrées)
+- [Répartition du travail](#répartition-du-travail)
+- [Compilation et exécution](#compilation-et-exécution)
+  - [Tips](#tips)
+  - [Partie 1](#partie-1-1)
+  - [Partie 2](#partie-2-1)
+  - [Partie 3](#partie-3-1)
+
+
 ## Arborecense du sprint
 
 Pour nous organiser nous avons séparé le projet en 3 parties qui sont séparés dans des fichiers différents.
@@ -32,11 +59,57 @@ Mise en place d’un serveur qui puisse gérer n clients, pour cela mettre en pl
 
 Le diagramme de séquence ci-dessous explique le fonctionnement du serveur et des clients.
 
-Voici les 2 propriétés pour comprendre le diagramme de séquence:
+Voici les 3 propriétés pour comprendre le diagramme de séquence:
 
                 ∀ x ∈ Client, x est un ClientLambda
 
                 Clients = {ClientLambda} ∪ AutresClients
+
+                0 <= |Clients| <= 10 (nombre de clients maximum dans la variable globale)
+
+### Extrait de la documentation de mermaid
+
+#### Loop
+
+        Loops
+        It is possible to express loops in a sequence diagram. This is done by the notation
+
+        loop Loop text
+        ... statements ...
+        end
+
+#### Alt
+
+        It is possible to express alternative paths in a sequence diagram. This is done by the notation
+
+        alt Describing text
+        ... statements ...
+        else
+        ... statements ...
+        end
+        or if there is sequence that is optional (if without else).
+
+        opt Describing text
+        ... statements ...
+        end
+
+#### Par
+
+        It is possible to show actions that are happening in parallel.
+
+        This is done by the notation
+
+        par [Action 1]
+        ... statements ...
+        and [Action 2]
+        ... statements ...
+        and [Action N]
+        ... statements ...
+        end
+
+### Rappel
+
+Pour affichier les différents diagrammes de séquence, il faut installer le plugin mermaid pour visual studio code. Si vous vous trouvez sur github, affichage est directement géré par github.
 
 ### Diagramme de séquence
 
@@ -84,8 +157,7 @@ Tout d'abord avant de coder, nous avons décidé en amont comment chaque étapes
 
 ## Compilation et exécution
 
-Pour compiler et exécuter le code, il suffit de se situer au bon endroit dans le fichier du SPRINT1. Chaque partie (1, 2 et 3) est localisé dans son fichier.
-Pour lancer le programme, voici les commandes et les tips pour exécuter correctement le programme:
+Le compilateur `gcc` est requis pour compiler le code. Pour compiler et exécuter le code, il suffit de se situer au bon endroit dans le fichier du SPRINT1. Chaque partie (1, 2 et 3) est localisé dans son fichier. Pour lancer le programme, voici les commandes et les tips pour exécuter correctement le programme:
 
 ### Tips
 

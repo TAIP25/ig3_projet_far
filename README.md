@@ -6,7 +6,7 @@ Voici le projet far de Léon BOUDIER et Wayne WAN CHOW WAH.
 
 ### Mermaid
 
-Pour affichier les différents diagrammes de séquence, il faut installer le plugin mermaid pour visual studio code. Si vous vous trouvez sur github, affichage est directement géré par github.
+Pour afficher les différents diagrammes de séquence, il faut installer l'extension mermaid pour visual studio code. Si vous vous trouvez sur github, affichage est directement géré par celui-ci.
 
 ## Arborecence
 

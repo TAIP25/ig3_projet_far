@@ -1,6 +1,6 @@
 # ig3_projet_far
 
-Voici le projet far de Léon BOUDIER et Wayne WAN CHOW WAH.
+Voici le projet far de Léon BOUDIER et Wayne WAN CHOW WAH. Ce projet utilise actuellement le tcp.
 
 ## Prérequis
 

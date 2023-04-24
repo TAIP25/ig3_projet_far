@@ -1,0 +1,6 @@
+sudo help
+sudo quit
+sudo list
+sudo name
+sudo rename
+sudo kick

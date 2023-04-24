@@ -44,6 +44,21 @@ void sendToAll(char* msg, int dSC){
     }
 }
 
+void sendToSpecificClient(char* msg, int dSC){
+    for(int i = 0; i < MAX_CLIENT; i++){
+        if(dSCList[i] == dSC && dSCList[i] != -1){
+            //Envoie un message au client i
+            //int send(int dSC, void *msg, int lg, int flags)
+            //Renvoie le nombre d'octet envoyé
+            //dSC = descripteur de socket du client
+            //&recvR = message envoyé
+            //sizeof(int) = taille du message (ici 4)
+            //0 = flags
+            send(dSCList[i], msg, MAX_MSG, 0);
+        }
+    }
+}
+
 //Gère la connexion d'un client
 //arg = descripteur de socket du client
 void * clientReceive(void* arg){
@@ -73,7 +88,7 @@ void * clientReceive(void* arg){
         }
 
         //Définir un protocole pour les commandes particulières envoyées en messages depuis le client (exemple @ sur discord)
-        if(msg[0] == 'sudo '){ //attention il faut mettre un espace après sudo
+        if (strncmp(msg, "sudo ", 5) == 0){ //attention il faut mettre un espace après sudo
             //Si le message commence par sudo, c'est une commande
             //On peut donc faire des actions en fonction de la commande
             
@@ -83,42 +98,47 @@ void * clientReceive(void* arg){
             }
 
             //sudo list pour afficher la liste des clients connectés
-            if(strcmp(msg, "sudo list") == 0){
+            else if(strcmp(msg, "sudo list") == 0){
                 //Envoie la liste des clients connectés au client i
                 //int send(int dSC, void *msg, int lg, int flags)
                 send(dSCList[i], "Liste des clients connectés : ", 255, 0);
             }
 
             //sudo mp pour envoyer un message privé à un client
-            if(strcmp(msg, "sudo mp") == 0){
+            else if(strcmp(msg, "sudo mp") == 0){
                 //Envoie un message privé à un client particulier
                 //int send(int dSC, void *msg, int lg, int flags)
                 send(dSCList[i], "A quel client voulez-vous envoyer un message privé ?\n", 255, 0);
+
+                //a. première version avec utilisation du numéro de client ou un identifiant 
+                //sudo mp <numéro du client> "message"
+                
+
             }
 
             //sudo help pour afficher la liste des commandes
-            if(strcmp(msg, "sudo help") == 0){
+            else if(strcmp(msg, "sudo help") == 0){
                 //Envoie la liste des commandes au client i
                 //int send(int dSC, void *msg, int lg, int flags)
                 send(dSCList[i], "Liste des commandes : \n", 255, 0);
             }
 
             //sudo name pour choisir un pseudo
-            if(strcmp(msg, "sudo name") == 0){
+            else if(strcmp(msg, "sudo name") == 0){
                 //Envoie un message au client i pour qu'il choisisse un pseudo
                 //int send(int dSC, void *msg, int lg, int flags)
                 send(dSCList[i], "Choisissez un pseudo : \n", 255, 0);
             }
 
             //sudo kick pour kick un autre client
-            if(strcmp(msg, "sudo kick") == 0){
+            else if(strcmp(msg, "sudo kick") == 0){
                 //Envoie un message au client i pour qu'il choisisse un client à kick
                 //int send(int dSC, void *msg, int lg, int flags)
                 send(dSCList[i], "A quel client voulez-vous kick ?\n", 255, 0);
             }
 
             //sudo rename pour se renommer
-            if(strcmp(msg, "sudo rename") == 0){
+            else if(strcmp(msg, "sudo rename") == 0){
                 //Envoie un message au client i pour qu'il choisisse un nouveau pseudo
                 //int send(int dSC, void *msg, int lg, int flags)
                 send(dSCList[i], "Choisissez un nouveau pseudo : \n", 255, 0);

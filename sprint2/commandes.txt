@@ -4,3 +4,6 @@ sudo list
 sudo name
 sudo rename
 sudo kick
+sudo mp
+[commande par default]
+sudo all

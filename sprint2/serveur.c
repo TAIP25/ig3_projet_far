@@ -34,10 +34,7 @@ void sendToAll(char* msg, int dSC){
         if(dSCList[i] != dSC && dSCList[i] != -1){
             //Envoie un message au client i
             //int send(int dSC, void *msg, int lg, int flags)
-            //Renvoie le nombre d'octet envoyé
             //dSC = descripteur de socket du client
-            //&recvR = message envoyé
-            //sizeof(int) = taille du message (ici 4)
             //0 = flags
             send(dSCList[i], msg, MAX_MSG, 0);
         }
@@ -49,10 +46,7 @@ void sendToSpecificClient(char* msg, int dSC){
         if(dSCList[i] == dSC && dSCList[i] != -1){
             //Envoie un message au client i
             //int send(int dSC, void *msg, int lg, int flags)
-            //Renvoie le nombre d'octet envoyé
             //dSC = descripteur de socket du client
-            //&recvR = message envoyé
-            //sizeof(int) = taille du message (ici 4)
             //0 = flags
             send(dSCList[i], msg, MAX_MSG, 0);
         }
@@ -106,13 +100,11 @@ void * clientReceive(void* arg){
 
             //sudo mp pour envoyer un message privé à un client
             else if(strcmp(msg, "sudo mp") == 0){
-                //Envoie un message privé à un client particulier
-                //int send(int dSC, void *msg, int lg, int flags)
-                send(dSCList[i], "A quel client voulez-vous envoyer un message privé ?\n", 255, 0);
+                //Envoie un message privé du client i au client souhaité
 
                 //a. première version avec utilisation du numéro de client ou un identifiant 
                 //sudo mp <numéro du client> "message"
-                
+                sendToSpecificClient(msg, dSCList[i]);
 
             }
 

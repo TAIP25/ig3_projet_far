@@ -20,6 +20,18 @@ int getDSC(int id);
 // post: Attention, si le client n'est pas connecté, une erreur est throw
 int getId(int dSC);
 
+// Recupère le pseudo du client à partir de sa dSC
+// pre: isConnected(dSC) == 1
+// post: getPseudo(dSC) == pseudo
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+char* getPseudoByDSC(int dSC);
+
+// Recupère le dSC du client à partir de son pseudo
+// pre: isConnected(dSC) == 1
+// post: getDSC(pseudo) == dSC
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+int getDSCByPseudo(char* pseudo);
+
 // Appelé quand le client envoie la commande "sudo all <msg>"
 // Appelé aussi quand le client envoie "<msg>", car c'est la commande par défaut
 // pre: isConnected(dSC) == 1
@@ -58,5 +70,16 @@ void sendList(int dSC);
 // post: Attention, si l'envoie du message échoue, une erreur est throw
 // post: Attention, si la fermeture de la connexion échoue, une erreur est throw
 void sendKick(int id);
+
+// Vérifie si le pseudo est correct
+// pre: pseudo != NULL
+// post: Renvoie 1 si le pseudo est correct, 0 sinon
+int properPseudo(char* pseudo);
+
+// Appelé quand le client envoie la commande "sudo rename <pseudo>"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Attention, si l'envoie du message échoue, une erreur est throw
+void sendRename(char* pseudo, int dSC);
 
 #endif

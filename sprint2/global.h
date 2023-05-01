@@ -12,6 +12,9 @@
 //Attention, il faut aussi modifier au niveau du client
 #define MAX_CHAR 1000
 
+//Taille maximale d'un pseudo
+#define MAX_PSEUDO 20
+
 //Liste des descripteurs de socket des clients
 extern int dSCList[MAX_CLIENT];
 
@@ -19,6 +22,9 @@ extern int dSCList[MAX_CLIENT];
 //Création de thread pour les clients
 //pthread_t est un type de donnée qui représente un thread
 extern pthread_t threadC[MAX_CLIENT];
+
+//Création de pseudo pour les clients
+extern char pseudoList[MAX_CLIENT][MAX_PSEUDO];
 
 
 #endif

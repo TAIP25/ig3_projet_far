@@ -14,6 +14,13 @@ void initDSCList(){
     }
 }
 
+//Initialise les pseudos des clients à l'id du client
+void initPseudoList(){
+    for(int i = 0; i < MAX_CLIENT; i++){
+        sprintf(pseudoList[i], "Client%d", i);
+    }
+}
+
 //Gère la connexion d'un client
 //arg = descripteur de socket du client
 void * clientReceive(void* arg){
@@ -68,13 +75,10 @@ void * clientReceive(void* arg){
             //Inutile de stocker le pointeur retourné, car on sait que le premier token est "sudo"
             strtok(msg, " ");
 
-            //Utile pour le printf
-            //char* sudo = strtok(msg, " ");
-
             char* commande = strtok(NULL, " ");
             
             char* arg;
-            if(strncmp(commande, "mp", 2) == 0 || strncmp(commande, "kick", 4) == 0){
+            if(strncmp(commande, "mp", 2) == 0 || strncmp(commande, "kick", 4) == 0 || strncmp(commande, "rename", 6) == 0){
                 arg = strtok(NULL, " ");
             }
             
@@ -85,7 +89,6 @@ void * clientReceive(void* arg){
 
             /*
             //Vérifie les commandes avec un printf
-            printf("sudo = %s\n", sudo);
             printf("commande = %s\n", commande);
             printf("arg = %s\n", arg);
             printf("message = %s\n", message);
@@ -99,7 +102,7 @@ void * clientReceive(void* arg){
             //Vérifie si la commande est "sudo mp <id> <msg>"
             else if(strncmp(commande, "mp", 2) == 0){
                 //Envoie le message au client <id>
-                sendMP(message, atoi(arg));
+                sendMP(message, getDSCByPseudo(arg));
             }
             //Vérifie si la commande est "sudo help"
             else if(strncmp(commande, "help", 4) == 0){
@@ -120,7 +123,18 @@ void * clientReceive(void* arg){
             //Vérifie si la commande est "sudo kick <id>"
             else if(strncmp(commande, "kick", 4) == 0){
                 //Envoie un message de déconnexion au client <id>
-                sendKick(atoi(arg));
+                sendKick(getDSCByPseudo(arg));
+            }
+            //Vérifie si la commande est "sudo rename <pseudo>"
+            else if(strncmp(commande, "rename", 6) == 0){
+                //Change le pseudo du client
+                sendRename(arg, getDSC(i));
+            }
+            else{
+
+                //Avertis le client que la commande n'existe pas
+                char* errorMsg = "Commande inconnue, tapez \"sudo help\" pour afficher la liste des commandes";
+                send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
             }
         }
         else{
@@ -146,6 +160,9 @@ int main(int argc, char *argv[]) {
     
     //Initialise la liste des descripteurs de socket des clients à -1
     initDSCList();
+
+    //Initialise les pseudos des clients à l'id du client
+    initPseudoList();
 
     //Création de la structure aS
     //aS = adresse du serveur
@@ -221,7 +238,7 @@ int main(int argc, char *argv[]) {
             //&aC = adresse du client
             //&lg = l'adresse de la taille de la structure aC
             dSCList[i] = accept(dS, (struct sockaddr*) &aC[i],&lg[i]);
-            printf("Le client %d est connecté\n", i);
+            printf("Le client %s est connecté\n", pseudoList[i]);
             pthread_create(&threadC[i], NULL, clientReceive, (void *) (long) i);
             i++;
         }

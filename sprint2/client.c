@@ -35,7 +35,6 @@ void * messageSend(void * pClient_socket) {
     printf("C'est le début de votre conversation pour plus d'information faite la commande \"sudo help\"\n");
 
     while(1) {
-
         char message[MAX_CHAR] = {0};
                 
         fgets(message, MAX_CHAR, stdin);
@@ -47,18 +46,6 @@ void * messageSend(void * pClient_socket) {
             printf("Erreur message trop grand\n");
         }
         else{
-            if (strcmp(message, "fin") == 0) {
-                //Ferme la socket
-                //int shutdown(int dS, int mode)
-                //Renvoie 0 si la fermeture est réussi et -1 si elle échoue
-                //dS = descripteur de socket
-                //mode = 0 = plus de réception
-                //mode = 1 = plus d'envoi
-                //mode = 2 = plus de réception et d'envoi
-                shutdown(client_socket, 2);
-                perror("Erreur lors de la fermeture de la socket");
-                exit(0);
-            }
             //Envoie le message au serveur
             //int send(int dS, const void *m, size_t lg, int flags)
             //Renvoie le nombre d'octet envoyé si la connexion est réussi et -1 si elle échoue

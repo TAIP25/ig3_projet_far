@@ -48,10 +48,35 @@ int getID(int dSC){
             return i;
         }
     }
-    perror("Erreur lors de la récupération du descripteur de socket du client");
+    perror("Erreur lors de la récupération de l'id du client");
     exit(0);
 }
 
+// Recupère le pseudo du client à partir de sa dSC
+// pre: isConnected(dSC) == 1
+// post: getPseudo(dSC) == pseudo
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+char* getPseudoByDSC(int dSC){
+    if(isConnected(dSC) == 0){
+        perror("Erreur le client n'est pas connecté");
+        exit(0);
+    }
+    return pseudoList[getID(dSC)];
+}
+
+// Recupère le dSC du client à partir de son pseudo
+// pre: isConnected(dSC) == 1
+// post: getDSC(pseudo) == dSC
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+int getDSCByPseudo(char* pseudo){
+    for(int i = 0; i < MAX_CLIENT; i++){
+        if(strcmp(pseudoList[i], pseudo) == 0){
+            return i;
+        }
+    }
+    perror("Erreur lors de la récupération du descripteur de socket du client");
+    exit(0);
+}
 
 // Appelé quand le client envoie la commande "sudo all <msg>"
 // Appelé aussi quand le client envoie "<msg>", car c'est la commande par défaut
@@ -155,7 +180,9 @@ void sendQuit(int dSC){
     
     dSCList[id] = -1;
 
-    printf("Le client %d s'est déconnecté\n", getID(dSC));
+    printf("Le client %s s'est déconnecté\n", pseudoList[id]);
+
+    sprintf(pseudoList[id], "Client%d", id);
     
     //Exit du thread
     //void pthread_exit(void *retval);
@@ -185,22 +212,21 @@ void sendList(int dSC){
             // size = taille de la chaine de caractère
             // format = format de la chaine de caractère
             // ... = variable à écrire dans la chaine de caractère
-            int n = snprintf(NULL, 0, "%d", i);
-            int nSocket = snprintf(NULL, 0, "%d", dSCList[i]);
-            char id[n+1];
-            char socket[nSocket+1];
-            snprintf(id, sizeof(id), "%d", i);
-            snprintf(socket, sizeof(socket), "%d", dSCList[i]);
+            int nId = snprintf(NULL, 0, "%d", i);
+            char id[nId+1];
+            int nPseudo = snprintf(NULL, 0, "%s", pseudoList[i]);
+            char pseudo[nPseudo+1];
+            snprintf(id, nId+1, "%d", i);
+            snprintf(pseudo, nPseudo+1, "%s", pseudoList[i]);
 
             // Ajoute l'id à la liste
             // char *strcat(char *dest, const char *src)
             // Renvoie dest
             // dest = chaine de caractère dans laquelle ajouter src
             // src = chaine de caractère à ajouter à dest
-            strcat(list, "id : ");
             strcat(list, id);
-            strcat(list, " | socket : ");
-            strcat(list, socket);
+            strcat(list, " : ");
+            strcat(list, pseudo);
             strcat(list, "\n");
         }
     }
@@ -227,8 +253,6 @@ void sendKick(int id){
         exit(0);
     }
 
-    printf("Hi\n");
-
     //Ferme la connexion avec le client
     //int shutdown(int dSC, int mode)
     //Renvoie 0 si la fermeture est réussi et -1 si elle échoue
@@ -244,10 +268,72 @@ void sendKick(int id){
 
     dSCList[id] = -1;
 
-    printf("Le client %d s'est fait kick\n", id);
+    printf("Le client %s s'est fait kick\n", pseudoList[id]);
+
+    sprintf(pseudoList[id], "Client%d", id);
     
     //Exit du thread
     //void pthread_exit(void *retval);
     //retval = valeur de retour
     pthread_exit(&threadC[id]);
+}
+
+// Vérifie si le pseudo est correct
+// pre: pseudo != NULL
+// post: Renvoie 1 si le pseudo est correct, 0 sinon
+int properPseudo(char* pseudo){
+    if(pseudo == NULL){
+        perror("Erreur le pseudo est NULL");
+        exit(0);
+    }
+    else if(strlen(pseudo) > MAX_PSEUDO){
+        return 0;
+    }
+    for(int i = 0; i < MAX_CLIENT; i++){
+        if(strcmp(pseudo, pseudoList[i]) == 0){
+            return 0;
+        }
+    }
+    for(int i = 0; i < strlen(pseudo); i++){
+        if(pseudo[i] == ' ' || pseudo[i] == '\n' || pseudo[i] == '\t' || pseudo[i] == '\r'){
+            return 0;
+        }
+    }
+    return 1;
+}
+
+// Appelé quand le client envoie la commande "sudo rename <pseudo>"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Attention, si l'envoie du message échoue, une erreur est throw
+void sendRename(char* pseudo, int dSC){
+    if(isConnected(dSC) == 0){
+        perror("Erreur le client n'est pas connecté");
+        exit(0);
+    }
+    
+    // Avant de changer le pseudo, on vérifie qu'il n'est pas déjà pris, si c'est le cas on envoie un message pour prévenir le client que le pseudo est déjà pris
+    // On vérifie aussi que le pseudo ne contient pas de caractère interdit d'espace, de retour à la ligne etc ...
+    if(properPseudo(pseudo) == 1){
+
+        printf("Le client %s a changé son pseudo en %s\n", pseudoList[getID(dSC)], pseudo);
+        
+        strcpy(pseudoList[getID(dSC)], pseudo);
+
+        char rename[MAX_CHAR] = "Votre pseudo a été changé en ";
+        strcat(rename, pseudo);
+        strcat(rename, "\n");
+
+        if(send(dSC, rename, MAX_CHAR, 0) == -1){
+            perror("Erreur lors de l'envoie du message");
+            exit(0);
+        }
+    }
+    else{
+        char rename[MAX_CHAR] = "Votre pseudo n'a pas pu être changé car il est déjà pris ou contient des caractères interdits ou est trop long\n";
+        if(send(dSC, rename, MAX_CHAR, 0) == -1){
+            perror("Erreur lors de l'envoie du message");
+            exit(0);
+        }
+    }
 }

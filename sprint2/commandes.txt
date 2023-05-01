@@ -1,13 +1,12 @@
 [commande par default]
 sudo all <msg> ou <msg>
 
-sudo mp <id> <msg>
+sudo mp <pseudo> <msg>
 sudo help
 sudo quit
 sudo list
-sudo kick <id>
+sudo kick <pseudo>
 
 
 [command pour plus tard]
-sudo name
 sudo rename

@@ -10,7 +10,7 @@
 
 //Taille maximale d'un message
 //Attention, il faut aussi modifier au niveau du client
-#define MAX_CHAR 255
+#define MAX_CHAR 1000
 
 //Liste des descripteurs de socket des clients
 extern int dSCList[MAX_CLIENT];

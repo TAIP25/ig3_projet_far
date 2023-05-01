@@ -5,20 +5,20 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
-// Besoin de ceci au prochain sprint
-//#include <pthread.h>
-
 //Taille maximale de client connecté
 #define MAX_CLIENT 10
 
 //Taille maximale d'un message
 //Attention, il faut aussi modifier au niveau du client
-#define MAX_MSG 255
+#define MAX_CHAR 1000
 
 //Liste des descripteurs de socket des clients
 extern int dSCList[MAX_CLIENT];
 
-// Besoin de ceci au prochain sprint
-//extern pthread_mutex_t mutex_compteur;
+
+//Création de thread pour les clients
+//pthread_t est un type de donnée qui représente un thread
+extern pthread_t threadC[MAX_CLIENT];
+
 
 #endif

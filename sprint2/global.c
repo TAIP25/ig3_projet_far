@@ -1,6 +1,10 @@
+#include <pthread.h>
 #include "global.h"
 
+
+//Liste des descripteurs de socket des clients
 int dSCList[MAX_CLIENT];
 
-// Besoin de ceci au prochain sprint
-//pthread_mutex_t mutex_compteur = PTHREAD_MUTEX_INITIALIZER;
+//Création de thread pour les clients
+//pthread_t est un type de donnée qui représente un thread
+pthread_t threadC[MAX_CLIENT];

@@ -5,29 +5,12 @@
 #include <string.h>
 #include <pthread.h>
 #include "global.h"
+#include "commandes.h"
 
 //Initialise la liste des descripteurs de socket des clients à -1
 void initDSCList(){
     for(int i = 0; i < MAX_CLIENT; i++){
         dSCList[i] = -1;
-    }
-}
-
-//msg = message reçu
-//dSC = descripteur de socket du client qui a envoyé le message
-//dSCList = liste des descripteurs de socket des clients
-void sendToAll(char* msg, int dSC){
-    for(int i = 0; i < MAX_CLIENT; i++){
-        if(dSCList[i] != dSC && dSCList[i] != -1){
-            //Envoie un message au client i
-            //int send(int dSC, void *msg, int lg, int flags)
-            //Renvoie le nombre d'octet envoyé
-            //dSC = descripteur de socket du client
-            //&recvR = message envoyé
-            //sizeof(int) = taille du message (ici 4)
-            //0 = flags
-            send(dSCList[i], msg, MAX_CHAR, 0);
-        }
     }
 }
 
@@ -46,7 +29,7 @@ void * clientReceive(void* arg){
         //Renvoie le nombre d'octet reçu
         //dSC = descripteur de socket du client
         //msg = message reçu
-        //sizeof(msg) = taille du message (ici 32)
+        //sizeof(msg) = taille du message
         //0 = flags
         int recvC = recv(dSCList[i], msg, sizeof(msg), 0);
 
@@ -59,27 +42,92 @@ void * clientReceive(void* arg){
             exit(0);
         }
 
-        printf("Message reçu : %s\n", msg);
+        //printf("Message reçu : %s\n", msg);
 
-        //Envoie le message reçu à tous les clients sauf celui qui l'a envoyé
-        sendToAll(msg, dSCList[i]);
+        //Permet de comparer les chaines de caractères
+        //int strncmp(const char *s1, const char *s2, size_t n)
+        //Renvoie 0 si les chaines sont identiques
+        //s1 = première chaine de caractère
+        //s2 = deuxième chaine de caractère
+        //n = nombre de caractère à comparer
+        if(strncmp(msg, "sudo", 4) == 0){
 
-        printf("Message envoyé\n");
+            //Définis un protocol pour les commandes
+            //Crée des tokens à partir du message reçu
+            //Premier token = sudo
+            //Deuxième token = commande
+            //Troisième token = argument (optionnel)
+            //Cinquième token = message (optionnel)
+
+            //Permet de découper une chaine de caractère en plusieurs tokens
+            //char* strtok(char *s, const char *delim)
+            //Renvoie un pointeur sur le premier token trouvé
+            //s = chaine de caractère à découper, NULL pour continuer à découper la chaine précédente
+            //delim = caractère de séparation
+            
+            //Inutile de stocker le pointeur retourné, car on sait que le premier token est "sudo"
+            strtok(msg, " ");
+
+            //Utile pour le printf
+            //char* sudo = strtok(msg, " ");
+
+            char* commande = strtok(NULL, " ");
+            
+            char* arg;
+            if(strncmp(commande, "mp", 2) == 0 || strncmp(commande, "kick", 4) == 0){
+                arg = strtok(NULL, " ");
+            }
+            
+            char* message;
+            if(strncmp(commande, "all", 3) == 0 || strncmp(commande, "mp", 2) == 0){
+                message = strtok(NULL, "\0");
+            }
+
+            /*
+            //Vérifie les commandes avec un printf
+            printf("sudo = %s\n", sudo);
+            printf("commande = %s\n", commande);
+            printf("arg = %s\n", arg);
+            printf("message = %s\n", message);
+            */
+
+            //Vérifie si la commande est "sudo help"
+            if(strncmp(commande, "all", 3) == 0){
+                //Envoie le message à tous les clients
+                sendAll(message, getDSC(i));
+            }
+            //Vérifie si la commande est "sudo mp <id> <msg>"
+            else if(strncmp(commande, "mp", 2) == 0){
+                //Envoie le message au client <id>
+                sendMP(message, atoi(arg));
+            }
+            //Vérifie si la commande est "sudo help"
+            else if(strncmp(commande, "help", 4) == 0){
+                //Envoie la liste des commandes au client
+                sendHelp(getDSC(i));
+            }
+            //Vérifie si la commande est "sudo quit"
+            else if(strncmp(commande, "quit", 4) == 0){
+                //Envoie un message de déconnexion au client
+                sendKick(i);
+                sendQuit(getDSC(i));
+            }
+            //Vérifie si la commande est "sudo list"
+            else if(strncmp(commande, "list", 4) == 0){
+                //Envoie la liste des clients au client
+                sendList(getDSC(i));
+            }
+            //Vérifie si la commande est "sudo kick <id>"
+            else if(strncmp(commande, "kick", 4) == 0){
+                //Envoie un message de déconnexion au client <id>
+                sendKick(atoi(arg));
+            }
+        }
+        else{
+            //Envoie le message reçu à tous les clients (commande par défaut)
+            sendAll(msg, getDSC(i));
+        }
     }
-
-    printf("Fin de la connexion\n");
-    //Ferme la connexion avec le client
-    //int shutdown(int dSC, int mode)
-    //Renvoie 0 si la fermeture est réussi et -1 si elle échoue
-    //dSC = descripteur de socket du client
-    //mode = mode de fermeture
-    //0 = plus de réception
-    //1 = plus d'envoi
-    //2 = plus de réception et d'envoi
-    shutdown(dSCList[i], 2); 
-
-    //Supprime le descripteur de socket du client de la liste
-    dSCList[i] = -1;
 
     //Exit du thread
     //void pthread_exit(void *retval);
@@ -95,8 +143,6 @@ int main(int argc, char *argv[]) {
         printf("Erreur nombre d'argument\n");
         exit(0);
     }
-
-    printf("Début programme\n");
     
     //Initialise la liste des descripteurs de socket des clients à -1
     initDSCList();
@@ -128,7 +174,7 @@ int main(int argc, char *argv[]) {
     //0 = Protocole par défaut
     int dS = socket(PF_INET, SOCK_STREAM, 0);
     
-    printf("Le socket est créé\n"); 
+    //Le socket est créé 
 
     //Liaison de la socket au serveur
     //int bind(int dS1, struct sockaddr *aS, socklen_t lgA)
@@ -138,7 +184,7 @@ int main(int argc, char *argv[]) {
     //sizeof(aS) = taille de la structure aS
     bind(dS, (struct sockaddr*)&aS, sizeof(aS));
 
-    printf("Le socket est nommé\n");
+    //Le socket est nommé
 
     //Mise en écoute de la socket
     //int listen(int dS, int nbC)
@@ -146,8 +192,6 @@ int main(int argc, char *argv[]) {
     //dS = descripteur de socket
     //nbC = nombre de connexion en attente
     listen(dS, 2);
-
-    printf("Mode écoute\n");
 
     //Création d'un tableau statique de 10 addresse de socket
     //aC = adresse du client
@@ -177,13 +221,11 @@ int main(int argc, char *argv[]) {
             //&aC = adresse du client
             //&lg = l'adresse de la taille de la structure aC
             dSCList[i] = accept(dS, (struct sockaddr*) &aC[i],&lg[i]);
-            printf("Le client %d est connecté\n", i+1);
+            printf("Le client %d est connecté\n", i);
             pthread_create(&threadC[i], NULL, clientReceive, (void *) (long) i);
             i++;
         }
     }
-
-    printf("Fin de la conversation\n");
 
     //Ferme la connexion du serveur
     //int shutdown(int dS1, int mode)
@@ -192,5 +234,5 @@ int main(int argc, char *argv[]) {
     //2 = fermeture de la connexion
     shutdown(dS, 2);
 
-    printf("Fin du programme\n");
+    printf("Le serveur est fermé\n");
 }

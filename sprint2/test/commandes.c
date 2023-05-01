@@ -1,4 +1,10 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <pthread.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include "global.h"
 
@@ -16,7 +22,7 @@ int isConnected(int dSC){
 
 // Recupère la dSC du client à partir de son id
 // pre: isConnected(dSC) == 1
-// post: getDSC(getID(dSC)) != -1
+// post: getDSC(getID(dSC)) == dSC
 // post: getDSC(id) == dSC
 // post: Attention, si le client n'est pas connecté, une erreur est throw
 int getDSC(int id){
@@ -33,8 +39,8 @@ int getDSC(int id){
 
 // Recupère l'id du client à partir de sa dSC
 // pre: isConnected(dSC) == 1
-// post: getID(getDSC(id)) != -1
-// post: getID(dSC) == id
+// post: getID(getDSC(id)) == id
+// post: getID(dSC) == id, 0 <= id < MAX_CLIENT
 // post: Attention, si le client n'est pas connecté, une erreur est throw
 int getID(int dSC){
     for(int i = 0; i < MAX_CLIENT; i++){
@@ -54,7 +60,7 @@ int getID(int dSC){
 // post: Attention, si l'envoie du message échoue, une erreur est throw
 void sendAll(char* msg, int dSC){
     if(isConnected(dSC) == 0){
-        perror("Erreur lors de l'envoie du message");
+        perror("Erreur le client n'est pas connecté");
         exit(0);
     }
     for(int i = 0; i < MAX_CLIENT; i++){
@@ -80,6 +86,10 @@ void sendAll(char* msg, int dSC){
 // post: Attention, si le client n'est pas connecté, une erreur est throw
 // post: Attention, si l'envoie du message échoue, une erreur est throw
 void sendMP(char* msg, int id){
+    if(isConnected(getDSC(id)) == 0){
+        perror("Erreur le client n'est pas connecté");
+        exit(0);
+    }
     if(send(getDSC(id), msg, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message");
         exit(0);
@@ -92,14 +102,13 @@ void sendMP(char* msg, int id){
 // post: Attention, si l'envoie du message échoue, une erreur est throw
 void sendHelp(int dSC){
     if(isConnected(dSC) == 0){
-        perror("Erreur lors de l'envoie du message");
+        perror("Erreur le client n'est pas connecté");
         exit(0);
     }
     char help[MAX_CHAR] = "Liste des commandes disponibles :\n"
                  "sudo help : affiche la liste des commandes disponibles\n"
                  "sudo all <msg> : envoie un message à tous les clients connectés\n"
                  "sudo mp <id> <msg> : envoie un message privé au client d'id <id>\n"
-                 "sudo help : affiche la liste des commandes disponibles\n"
                  "sudo quit : déconnecte le client du serveur\n"
                  "sudo list : affiche la liste des clients connectés\n"
                  "sudo kick <id> : déconnecte le client d'id <id> du serveur\n";
@@ -116,10 +125,14 @@ void sendHelp(int dSC){
 // post: Attention, si l'envoie du message échoue, une erreur est throw
 // post: Attention, si la fermeture de la connexion échoue, une erreur est throw
 void sendQuit(int dSC){
+    
+    int id = getID(dSC);
+
     if(isConnected(dSC) == 0){
-        perror("Erreur lors de l'envoie du message");
+        perror("Erreur le client n'est pas connecté");
         exit(0);
     }
+
     // Envoie un message de prévention au client
     char quit[MAX_CHAR] = "Vous avez été déconnecté du serveur\n";
     if(send(dSC, quit, MAX_CHAR, 0) == -1){
@@ -139,7 +152,15 @@ void sendQuit(int dSC){
         perror("Erreur lors de la fermeture de la connexion avec le client");
         exit(0);
     }
-    dSCList[dSC] = -1;
+    
+    dSCList[id] = -1;
+
+    printf("Le client %d s'est déconnecté\n", getID(dSC));
+    
+    //Exit du thread
+    //void pthread_exit(void *retval);
+    //retval = valeur de retour
+    pthread_exit(&threadC[getID(dSC)]);
 }
 
 // Appelé quand le client envoie la commande "sudo list"
@@ -151,7 +172,7 @@ void sendList(int dSC){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
-    char list[MAX_CHAR] = "Liste des clients connectés :\n";
+    char list[MAX_CHAR*MAX_CLIENT/10] = "Liste des clients connectés :\n";
     for(int i = 0; i < MAX_CLIENT; i++){
         if(dSCList[i] != -1){
             
@@ -165,15 +186,21 @@ void sendList(int dSC){
             // format = format de la chaine de caractère
             // ... = variable à écrire dans la chaine de caractère
             int n = snprintf(NULL, 0, "%d", i);
+            int nSocket = snprintf(NULL, 0, "%d", dSCList[i]);
             char id[n+1];
-            snprintf(id, "%d", i);
+            char socket[nSocket+1];
+            snprintf(id, sizeof(id), "%d", i);
+            snprintf(socket, sizeof(socket), "%d", dSCList[i]);
 
             // Ajoute l'id à la liste
             // char *strcat(char *dest, const char *src)
             // Renvoie dest
             // dest = chaine de caractère dans laquelle ajouter src
             // src = chaine de caractère à ajouter à dest
+            strcat(list, "id : ");
             strcat(list, id);
+            strcat(list, " | socket : ");
+            strcat(list, socket);
             strcat(list, "\n");
         }
     }
@@ -188,13 +215,19 @@ void sendList(int dSC){
 // post: Attention, si le client n'est pas connecté, une erreur est throw
 // post: Attention, si l'envoie du message échoue, une erreur est throw
 // post: Attention, si la fermeture de la connexion échoue, une erreur est throw
-void kickClient(int id){
+void sendKick(int id){
+    if(isConnected(getDSC(id)) == 0){
+        perror("Erreur le client n'est pas connecté");
+        exit(0);
+    }
     // Envoie un message de prévention au client
     char kick[MAX_CHAR] = "Vous avez été kick du serveur par un client\n";
     if(send(getDSC(id), kick, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
+
+    printf("Hi\n");
 
     //Ferme la connexion avec le client
     //int shutdown(int dSC, int mode)
@@ -208,5 +241,13 @@ void kickClient(int id){
         perror("Erreur lors de la fermeture de la connexion avec le client");
         exit(0);
     }
-    dSCList[getDSC(id)] = -1;
+
+    dSCList[id] = -1;
+
+    printf("Le client %d s'est fait kick\n", id);
+    
+    //Exit du thread
+    //void pthread_exit(void *retval);
+    //retval = valeur de retour
+    pthread_exit(&threadC[id]);
 }

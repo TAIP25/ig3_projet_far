@@ -5,12 +5,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
-
-// Taille maximale d'un message
-// Attention, il faut aussi modifier au niveau du serveur
-#define MAX_CHAR 255
-
-char message[MAX_CHAR] = {0};
+#include "global.h"
 
 void * messageReceive(void* pClient_socket) {
 
@@ -27,7 +22,7 @@ void * messageReceive(void* pClient_socket) {
             perror("Erreur lors de la réception du message");
             exit(0);
         }
-        printf("Interlocuteur : %s\n", message);
+        printf("\nRECV:\n%s\n", message);
     }
 }
 
@@ -37,7 +32,7 @@ void * messageSend(void * pClient_socket) {
     int client_socket = (long) pClient_socket;
     
     // N'importe quel client peut commencer la conversation
-    printf("C'est le début de votre conversation\n");
+    printf("C'est le début de votre conversation pour plus d'information faite la commande \"sudo help\"\n");
 
     while(1) {
 
@@ -102,7 +97,8 @@ int main(int argc, char *argv[]) {
         perror("Erreur de création de socket client");
         exit(0);
     }
-    printf("Socket Créé\n");
+
+    //Socket Créé
 
     //DEFINITION DE L'ADRESSE IP ET DU PORT D'ECOUTE DU SERVEUR
 

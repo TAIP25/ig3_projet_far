@@ -64,7 +64,7 @@ void * clientReceive(void* arg){
             //Premier token = sudo
             //Deuxième token = commande
             //Troisième token = argument (optionnel)
-            //Cinquième token = message (optionnel)
+            //Quatrième token = message (optionnel)
 
             //Permet de découper une chaine de caractère en plusieurs tokens
             //char* strtok(char *s, const char *delim)
@@ -224,6 +224,8 @@ int main(int argc, char *argv[]) {
 
     //Gestion des clients
     //Dès qu'un client se connecte, un thread est créé pour gérer la connexion
+
+    printf("Serveur lancé\n");
     
     int i = 0;
     while(1) {

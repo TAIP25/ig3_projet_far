@@ -32,7 +32,7 @@ void * messageSend(void * pClient_socket) {
     int client_socket = (long) pClient_socket;
     
     // N'importe quel client peut commencer la conversation
-    printf("C'est le début de votre conversation pour plus d'information faite la commande \"sudo help\"\n");
+    printf("C'est le début de votre conversation. Pour voir la liste des commandes faites \"sudo help\"\n");
 
     while(1) {
         char message[MAX_CHAR] = {0};

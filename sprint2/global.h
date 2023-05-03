@@ -26,5 +26,7 @@ extern pthread_t threadC[MAX_CLIENT];
 //Création de pseudo pour les clients
 extern char pseudoList[MAX_CLIENT][MAX_PSEUDO];
 
+//Création d'un mutex pour la liste des descripteurs de socket des clients et la liste des pseudos
+extern pthread_mutex_t mutex;
 
 #endif

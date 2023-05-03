@@ -1,12 +1,7 @@
-[commande par default]
-sudo all <msg> ou <msg>
-
-sudo mp <pseudo> <msg>
-sudo help
-sudo quit
-sudo list
-sudo kick <pseudo>
-
-
-[command pour plus tard]
-sudo rename
+[INFO] Liste des commandes disponibles :
+[INFO] sudo help : affiche la liste des commandes disponibles
+[INFO] sudo all <msg> : envoie un message à tous les clients connectés (par défaut)
+[INFO] sudo mp <pseudo> <msg> : envoie un message privé au client <pseudo>
+[INFO] sudo quit : déconnecte le client du serveur
+[INFO] sudo list : affiche la liste des clients connectés (id : pseudo)
+[INFO] sudo kick <pseudo> : déconnecte le client <pseudo> du serveur

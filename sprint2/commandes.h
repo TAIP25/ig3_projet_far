@@ -29,7 +29,7 @@ char* getPseudoByDSC(int dSC);
 // Recupère le dSC du client à partir de son pseudo
 // pre: isConnected(dSC) == 1
 // post: getDSC(pseudo) == dSC
-// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Attention, si le client n'est pas connecté => return -1
 int getDSCByPseudo(char* pseudo);
 
 // Appelé quand le client envoie la commande "sudo all <msg>"
@@ -41,9 +41,9 @@ void sendAll(char* msg, int dSC);
 
 // Appelé quand le client envoie la commande "sudo mp <id> <msg>"
 // pre: isConnected(dSC) == 1
-// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Attention, si l'un des clients n'est pas connecté, une erreur est throw
 // post: Attention, si l'envoie du message échoue, une erreur est throw
-void sendMP(char* msg, int id);
+void sendMP(char* msg, int idS, int idR);
 
 // Appelé quand le client envoie la commande "sudo help"
 // pre: isConnected(dSC) == 1
@@ -66,10 +66,10 @@ void sendList(int dSC);
 
 // Appelé quand le client envoie la commande "sudo kick <id>"
 // pre: isConnected(dSC) == 1
-// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Attention, si l'un des clients n'est pas connecté, une erreur est throw
 // post: Attention, si l'envoie du message échoue, une erreur est throw
 // post: Attention, si la fermeture de la connexion échoue, une erreur est throw
-void sendKick(int id);
+void sendKick(int idS, int idR);
 
 // Vérifie si le pseudo est correct
 // pre: pseudo != NULL

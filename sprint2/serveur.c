@@ -22,7 +22,7 @@ void initPseudoList(){
 }
 
 //Gère la connexion d'un client
-//arg = descripteur de socket du client
+//arg = l'indice du descripteur de socket du client
 void * clientReceive(void* arg){
     
     int i = (long) arg;
@@ -87,22 +87,21 @@ void * clientReceive(void* arg){
                 message = strtok(NULL, "\0");
             }
 
-            /*
-            //Vérifie les commandes avec un printf
-            printf("commande = %s\n", commande);
-            printf("arg = %s\n", arg);
-            printf("message = %s\n", message);
-            */
-
             //Vérifie si la commande est "sudo help"
             if(strncmp(commande, "all", 3) == 0){
                 //Envoie le message à tous les clients
                 sendAll(message, getDSC(i));
             }
-            //Vérifie si la commande est "sudo mp <id> <msg>"
+            //Vérifie si la commande est "sudo mp <pseudo> <msg>"
             else if(strncmp(commande, "mp", 2) == 0){
-                //Envoie le message au client <id>
-                sendMP(message, getDSCByPseudo(arg));
+                if(getDSCByPseudo(arg) == -1){
+                    //Avertis le client que le client <pseudo> n'existe pas
+                    char errorMsg[MAX_CHAR] = "Le client n'existe pas";
+                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
+                    continue;
+                }
+                //Envoie le message au client <pseudo>
+                sendMP(message, i, getDSCByPseudo(arg)); 
             }
             //Vérifie si la commande est "sudo help"
             else if(strncmp(commande, "help", 4) == 0){
@@ -112,7 +111,6 @@ void * clientReceive(void* arg){
             //Vérifie si la commande est "sudo quit"
             else if(strncmp(commande, "quit", 4) == 0){
                 //Envoie un message de déconnexion au client
-                sendKick(i);
                 sendQuit(getDSC(i));
             }
             //Vérifie si la commande est "sudo list"
@@ -120,10 +118,16 @@ void * clientReceive(void* arg){
                 //Envoie la liste des clients au client
                 sendList(getDSC(i));
             }
-            //Vérifie si la commande est "sudo kick <id>"
+            //Vérifie si la commande est "sudo kick <pseudo>"
             else if(strncmp(commande, "kick", 4) == 0){
-                //Envoie un message de déconnexion au client <id>
-                sendKick(getDSCByPseudo(arg));
+                if(getDSCByPseudo(arg) == -1){
+                    //Avertis le client que le client <pseudo> n'existe pas
+                    char errorMsg[MAX_CHAR] = "Le client n'existe pas";
+                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
+                    continue;
+                }
+                //Envoie un message de déconnexion au client <pseudo>
+                sendKick(i, getDSCByPseudo(arg));
             }
             //Vérifie si la commande est "sudo rename <pseudo>"
             else if(strncmp(commande, "rename", 6) == 0){
@@ -133,7 +137,7 @@ void * clientReceive(void* arg){
             else{
 
                 //Avertis le client que la commande n'existe pas
-                char* errorMsg = "Commande inconnue, tapez \"sudo help\" pour afficher la liste des commandes";
+                char* errorMsg = "[ERROR] Commande inconnue, tapez \"sudo help\" pour afficher la liste des commandes";
                 send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
             }
         }
@@ -141,6 +145,7 @@ void * clientReceive(void* arg){
             //Envoie le message reçu à tous les clients (commande par défaut)
             sendAll(msg, getDSC(i));
         }
+        
     }
 
     //Exit du thread
@@ -154,15 +159,17 @@ int main(int argc, char *argv[]) {
     //Vérification du nombre d'argument
     //argv[0] = port du serveur
     if(argc != 2){
-        printf("Erreur nombre d'argument\n");
+        printf("[ERR0R] Erreur nombre d'argument\n");
         exit(0);
     }
-    
+
+    pthread_mutex_lock(&mutex);
     //Initialise la liste des descripteurs de socket des clients à -1
     initDSCList();
 
     //Initialise les pseudos des clients à l'id du client
     initPseudoList();
+    pthread_mutex_unlock(&mutex);
 
     //Création de la structure aS
     //aS = adresse du serveur
@@ -225,7 +232,7 @@ int main(int argc, char *argv[]) {
     //Gestion des clients
     //Dès qu'un client se connecte, un thread est créé pour gérer la connexion
 
-    printf("Serveur lancé\n");
+    printf("[INFO] Serveur lancé\n");
     
     int i = 0;
     while(1) {
@@ -239,8 +246,10 @@ int main(int argc, char *argv[]) {
             //dS = descripteur de socket
             //&aC = adresse du client
             //&lg = l'adresse de la taille de la structure aC
+            pthread_mutex_lock(&mutex);
             dSCList[i] = accept(dS, (struct sockaddr*) &aC[i],&lg[i]);
-            printf("Le client %s est connecté\n", pseudoList[i]);
+            pthread_mutex_unlock(&mutex);
+            printf("[INFO] Le client %s est connecté\n", pseudoList[i]);
             pthread_create(&threadC[i], NULL, clientReceive, (void *) (long) i);
             i++;
         }
@@ -253,5 +262,5 @@ int main(int argc, char *argv[]) {
     //2 = fermeture de la connexion
     shutdown(dS, 2);
 
-    printf("Le serveur est fermé\n");
+    printf("[INFO] Le serveur est fermé\n");
 }

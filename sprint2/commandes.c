@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
 #include <pthread.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -67,15 +66,14 @@ char* getPseudoByDSC(int dSC){
 // Recupère le dSC du client à partir de son pseudo
 // pre: isConnected(dSC) == 1
 // post: getDSC(pseudo) == dSC
-// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Attention, si le client n'est pas connecté => return -1
 int getDSCByPseudo(char* pseudo){
     for(int i = 0; i < MAX_CLIENT; i++){
         if(strcmp(pseudoList[i], pseudo) == 0){
             return i;
         }
     }
-    perror("Erreur lors de la récupération du descripteur de socket du client");
-    exit(0);
+    return -1;
 }
 
 // Appelé quand le client envoie la commande "sudo all <msg>"
@@ -88,17 +86,21 @@ void sendAll(char* msg, int dSC){
         perror("Erreur le client n'est pas connecté");
         exit(0);
     }
+    
+    char infoMsg[MAX_CHAR] = "[BROADCAST] ";
+    strcat(infoMsg, msg);
+
     for(int i = 0; i < MAX_CLIENT; i++){
         if(dSCList[i] != dSC && dSCList[i] != -1){
             
-            //Envoie un message au client i
-            //int send(int dSC, void *msg, int lg, int flags)
-            //Renvoie le nombre d'octet envoyé
-            //dSC = descripteur de socket du client
-            //&recvR = message envoyé
-            //sizeof(int) = taille du message (ici 4)
-            //0 = flags
-            if(send(dSCList[i], msg, MAX_CHAR, 0) == -1){
+            // Envoie un message au client i
+            // int send(int dSC, void *msg, int lg, int flags)
+            // Renvoie le nombre d'octet envoyé
+            // dSC = descripteur de socket du client
+            // &recvR = message envoyé
+            // sizeof(int) = taille du message (ici 4)
+            // 0 = flags
+            if(send(dSCList[i], infoMsg, MAX_CHAR, 0) == -1){
                 perror("Erreur lors de l'envoie du message");
                 exit(0);
             }
@@ -108,14 +110,21 @@ void sendAll(char* msg, int dSC){
 
 // Appelé quand le client envoie la commande "sudo mp <id> <msg>"
 // pre: isConnected(dSC) == 1
-// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Attention, si l'un des clients n'est pas connecté, une erreur est throw
 // post: Attention, si l'envoie du message échoue, une erreur est throw
-void sendMP(char* msg, int id){
-    if(isConnected(getDSC(id)) == 0){
-        perror("Erreur le client n'est pas connecté");
+void sendMP(char* msg, int idS, int idR){
+    if(isConnected(getDSC(idS)) == 0 || isConnected(getDSC(idR)) == 0){
+        perror("Erreur un des clients n'est pas connecté");
         exit(0);
     }
-    if(send(getDSC(id), msg, MAX_CHAR, 0) == -1){
+
+    // Envoie un message au client idR
+    char infoMsg[MAX_CHAR] = "[MP] ";
+    strcat(infoMsg, getPseudoByDSC(getDSC(idS)));
+    strcat(infoMsg, ": ");
+    strcat(infoMsg, msg);
+
+    if(send(getDSC(idR), infoMsg, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
@@ -130,13 +139,13 @@ void sendHelp(int dSC){
         perror("Erreur le client n'est pas connecté");
         exit(0);
     }
-    char help[MAX_CHAR] = "Liste des commandes disponibles :\n"
-                 "sudo help : affiche la liste des commandes disponibles\n"
-                 "sudo all <msg> : envoie un message à tous les clients connectés\n"
-                 "sudo mp <id> <msg> : envoie un message privé au client d'id <id>\n"
-                 "sudo quit : déconnecte le client du serveur\n"
-                 "sudo list : affiche la liste des clients connectés\n"
-                 "sudo kick <id> : déconnecte le client d'id <id> du serveur\n";
+    char help[MAX_CHAR] = "[INFO] Liste des commandes disponibles :\n"
+                 "[INFO] sudo help : affiche la liste des commandes disponibles\n"
+                 "[INFO] sudo all <msg> : envoie un message à tous les clients connectés (par défaut)\n"
+                 "[INFO] sudo mp <pseudo> <msg> : envoie un message privé au client <pseudo>\n"
+                 "[INFO] sudo quit : déconnecte le client du serveur\n"
+                 "[INFO] sudo list : affiche la liste des clients connectés (id : pseudo)\n"
+                 "[INFO] sudo kick <pseudo> : déconnecte le client <pseudo> du serveur\n";
 
     if(send(dSC, help, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message");
@@ -159,35 +168,39 @@ void sendQuit(int dSC){
     }
 
     // Envoie un message de prévention au client
-    char quit[MAX_CHAR] = "Vous avez été déconnecté du serveur\n";
+    char quit[MAX_CHAR] = "[INFO] Vous avez été déconnecté du serveur";
     if(send(dSC, quit, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
 
-    //Ferme la connexion avec le client
-    //int shutdown(int dSC, int mode)
-    //Renvoie 0 si la fermeture est réussi et -1 si elle échoue
-    //dSC = descripteur de socket du client
-    //mode = mode de fermeture
-    //0 = plus de réception
-    //1 = plus d'envoi
-    //2 = plus de réception et d'envoi
+    // Ferme la connexion avec le client
+    // int shutdown(int dSC, int mode)
+    // Renvoie 0 si la fermeture est réussi et -1 si elle échoue
+    // dSC = descripteur de socket du client
+    // mode = mode de fermeture
+    // 0 = plus de réception
+    // 1 = plus d'envoi
+    // 2 = plus de réception et d'envoi
     if(shutdown(dSC, 2) == -1){
         perror("Erreur lors de la fermeture de la connexion avec le client");
         exit(0);
     }
-    
+
+    pthread_mutex_lock(&mutex);
     dSCList[id] = -1;
+    pthread_mutex_unlock(&mutex);
 
-    printf("Le client %s s'est déconnecté\n", pseudoList[id]);
+    printf("[INFO] Le client %s s'est déconnecté\n", pseudoList[id]);
 
+    pthread_mutex_lock(&mutex);
     sprintf(pseudoList[id], "Client%d", id);
-    
-    //Exit du thread
-    //void pthread_exit(void *retval);
-    //retval = valeur de retour
-    pthread_exit(&threadC[getID(dSC)]);
+    pthread_mutex_unlock(&mutex);
+
+    // Exit du thread
+    // void pthread_exit(void *retval);
+    // retval = valeur de retour
+    pthread_exit(&threadC[id]);
 }
 
 // Appelé quand le client envoie la commande "sudo list"
@@ -199,7 +212,7 @@ void sendList(int dSC){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
-    char list[MAX_CHAR*MAX_CLIENT/10] = "Liste des clients connectés :\n";
+    char list[MAX_CHAR*MAX_CLIENT/10] = "[INFO] Liste des clients connectés :\n";
     for(int i = 0; i < MAX_CLIENT; i++){
         if(dSCList[i] != -1){
             
@@ -224,12 +237,16 @@ void sendList(int dSC){
             // Renvoie dest
             // dest = chaine de caractère dans laquelle ajouter src
             // src = chaine de caractère à ajouter à dest
+            strcat(list, "[INFO] ");
             strcat(list, id);
-            strcat(list, " : ");
+            strcat(list, ": ");
             strcat(list, pseudo);
             strcat(list, "\n");
         }
     }
+    // Supprime le dernier \n
+    list[strlen(list)-1] = '\0';
+
     if(send(dSC, list, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message");
         exit(0);
@@ -238,44 +255,51 @@ void sendList(int dSC){
 
 // Appelé quand le client envoie la commande "sudo kick <id>"
 // pre: isConnected(dSC) == 1
-// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Attention, si l'un des clients n'est pas connecté, une erreur est throw
 // post: Attention, si l'envoie du message échoue, une erreur est throw
 // post: Attention, si la fermeture de la connexion échoue, une erreur est throw
-void sendKick(int id){
-    if(isConnected(getDSC(id)) == 0){
+void sendKick(int idS, int idR){
+    if(isConnected(getDSC(idS)) == 0 || isConnected(getDSC(idR)) == 0){
         perror("Erreur le client n'est pas connecté");
         exit(0);
     }
+    
     // Envoie un message de prévention au client
-    char kick[MAX_CHAR] = "Vous avez été kick du serveur par un client\n";
-    if(send(getDSC(id), kick, MAX_CHAR, 0) == -1){
+    char kick[MAX_CHAR] = "[INFO] Vous avez été kick du serveur par ";
+    strcat(kick, pseudoList[idS]);
+
+    if(send(getDSC(idR), kick, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
 
-    //Ferme la connexion avec le client
-    //int shutdown(int dSC, int mode)
-    //Renvoie 0 si la fermeture est réussi et -1 si elle échoue
-    //dSC = descripteur de socket du client
-    //mode = mode de fermeture
-    //0 = plus de réception
-    //1 = plus d'envoi
-    //2 = plus de réception et d'envoi
-    if(shutdown(getDSC(id), 2) == -1){
+    // Ferme la connexion avec le client
+    // int shutdown(int dSC, int mode)
+    // Renvoie 0 si la fermeture est réussi et -1 si elle échoue
+    // dSC = descripteur de socket du client
+    // mode = mode de fermeture
+    // 0 = plus de réception
+    // 1 = plus d'envoi
+    // 2 = plus de réception et d'envoi
+    if(shutdown(getDSC(idR), 2) == -1){
         perror("Erreur lors de la fermeture de la connexion avec le client");
         exit(0);
     }
 
-    dSCList[id] = -1;
+    pthread_mutex_lock(&mutex);
+    dSCList[idR] = -1;
+    pthread_mutex_unlock(&mutex);
 
-    printf("Le client %s s'est fait kick\n", pseudoList[id]);
+    printf("[INFO] Le client %s s'est fait kick\n", pseudoList[idR]);
 
-    sprintf(pseudoList[id], "Client%d", id);
+    pthread_mutex_lock(&mutex);
+    sprintf(pseudoList[idR], "Client%d", idR);
+    pthread_mutex_unlock(&mutex);
     
-    //Exit du thread
-    //void pthread_exit(void *retval);
-    //retval = valeur de retour
-    pthread_exit(&threadC[id]);
+    // Exit du thread
+    // void pthread_exit(void *retval);
+    // retval = valeur de retour
+    pthread_exit(&threadC[idR]);
 }
 
 // Vérifie si le pseudo est correct
@@ -316,13 +340,14 @@ void sendRename(char* pseudo, int dSC){
     // On vérifie aussi que le pseudo ne contient pas de caractère interdit d'espace, de retour à la ligne etc ...
     if(properPseudo(pseudo) == 1){
 
-        printf("Le client %s a changé son pseudo en %s\n", pseudoList[getID(dSC)], pseudo);
+        printf("[INFO] Le client %s a changé son pseudo en %s\n", pseudoList[getID(dSC)], pseudo);
         
+        //pthread_mutex_lock(&mutex);
         strcpy(pseudoList[getID(dSC)], pseudo);
+        //pthread_mutex_unlock(&mutex);
 
-        char rename[MAX_CHAR] = "Votre pseudo a été changé en ";
+        char rename[MAX_CHAR] = "[INFO] Votre pseudo a été changé en ";
         strcat(rename, pseudo);
-        strcat(rename, "\n");
 
         if(send(dSC, rename, MAX_CHAR, 0) == -1){
             perror("Erreur lors de l'envoie du message");
@@ -330,7 +355,7 @@ void sendRename(char* pseudo, int dSC){
         }
     }
     else{
-        char rename[MAX_CHAR] = "Votre pseudo n'a pas pu être changé car il est déjà pris ou contient des caractères interdits ou est trop long\n";
+        char rename[MAX_CHAR] = "[INFO] Votre pseudo n'a pas pu être changé car il est déjà pris ou contient des caractères interdits ou est trop long réessayez avec sudo rename <pseudo>";
         if(send(dSC, rename, MAX_CHAR, 0) == -1){
             perror("Erreur lors de l'envoie du message");
             exit(0);

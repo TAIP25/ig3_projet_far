@@ -106,7 +106,24 @@ void * clientReceive(void* arg){
             //Vérifie si la commande est "sudo help"
             else if(strncmp(commande, "help", 4) == 0){
                 //Envoie la liste des commandes au client
-                sendHelp(getDSC(i));
+                //il faut lire et envoyer le fichier commandes.txt au client i
+
+                FILE *f = fopen("commandes.txt", "r");
+                if(f == NULL){
+                    perror("Erreur lors de l'ouverture du fichier");
+                    exit(0);
+                }
+                char line[MAX_CHAR];
+                while(fgets(line, sizeof(line), f)){
+                    if(send(dSCList[i], line, sizeof(line), 0) == -1){
+                        perror("Erreur lors de l'envoie du message");
+                        exit(0);
+                    }
+                }
+                fclose(f);
+                
+
+                //sendHelp(getDSC(i));
             }
             //Vérifie si la commande est "sudo quit"
             else if(strncmp(commande, "quit", 4) == 0){

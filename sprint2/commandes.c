@@ -139,18 +139,22 @@ void sendHelp(int dSC){
         perror("Erreur le client n'est pas connecté");
         exit(0);
     }
-    char help[MAX_CHAR] = "[INFO] Liste des commandes disponibles :\n"
-                 "[INFO] sudo help : affiche la liste des commandes disponibles\n"
-                 "[INFO] sudo all <msg> : envoie un message à tous les clients connectés (par défaut)\n"
-                 "[INFO] sudo mp <pseudo> <msg> : envoie un message privé au client <pseudo>\n"
-                 "[INFO] sudo quit : déconnecte le client du serveur\n"
-                 "[INFO] sudo list : affiche la liste des clients connectés (id : pseudo)\n"
-                 "[INFO] sudo kick <pseudo> : déconnecte le client <pseudo> du serveur\n";
-
-    if(send(dSC, help, MAX_CHAR, 0) == -1){
-        perror("Erreur lors de l'envoie du message");
+    
+    // Ouverture du fichier commandes.txt
+    FILE *f = fopen("commandes.txt", "r");
+    if(f == NULL){
+        perror("Erreur lors de l'ouverture du fichier");
         exit(0);
     }
+    char line[MAX_CHAR];
+    while(fgets(line, sizeof(line), f)){
+        line[strlen(line)-1] = '\0';
+        if(send(dSC, line, sizeof(line), 0) == -1){
+            perror("Erreur lors de l'envoie du message");
+            exit(0);
+        }
+    }
+    fclose(f);
 }
 
 // Appelé quand le client envoie la commande "sudo quit"

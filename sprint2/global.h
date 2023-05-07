@@ -35,8 +35,8 @@ extern pthread_t threadC[MAX_CLIENT];
 //Création de pseudo pour les clients
 extern char pseudoList[MAX_CLIENT][MAX_PSEUDO];
 
-//Création d'un mutex pour la liste des descripteurs de socket des clients et la liste des pseudos
-//Il n'y a qu'un seul mutex pour les variables dSCList, aC, lg et pseudoList car elles sont étroitement liées
+//Création d'un mutex pour les variables partagées
+//Il n'y a qu'un seul mutex car toutes les variables partagées étroitement liées
 extern pthread_mutex_t mutex;
 
 //Création d'un sémaphore indiquant le nombre de places restantes sur le serveur

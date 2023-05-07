@@ -24,7 +24,8 @@ pthread_t threadC[MAX_CLIENT];
 //Création de pseudo pour les clients
 char pseudoList[MAX_CLIENT][MAX_PSEUDO];
 
-//Création d'un mutex pour la liste des descripteurs de socket des clients et la liste des pseudos
+//Création d'un mutex pour les variables partagées
+//Il n'y a qu'un seul mutex car toutes les variables partagées étroitement liées
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //Création d'un sémaphore indiquant le nombre de places restantes sur le serveur

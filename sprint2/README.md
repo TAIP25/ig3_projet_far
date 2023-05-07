@@ -53,7 +53,7 @@ Cela permet de mieux organiser le code et de mieux comprendre le fonctionnement 
 ### **`global.c`** et **`global.h`**
 
 Les variables globales sont dans le fichier **`global.c`** et **`global.h`**.
-Il y a des variables/constants qui sont utilisées dans **`client.c`**, **`serveur.c`** et **`commandes.c`** ou que dans **`serveur.c`** et **`commandes.c`**. 
+Il y a des variables/constantes qui sont utilisées dans **`client.c`**, **`serveur.c`** et **`commandes.c`** ou que dans **`serveur.c`** et **`commandes.c`**. 
 Cela permet de modifier qu'une seule fois une variable globale si on veut changer sa valeur.
 
 ### **`client.c`**
@@ -62,11 +62,11 @@ Ce fichier n'a presque pas changé depuis le sprint 1. Il contient le code du cl
 
 ### **`serveur.c`**
 
-Il a été modifié pour gérer toute le protocole de communication.
+Il a été modifié pour gérer tout le protocole de communication.
 L'ajout de sémaphores pour gérer le nombre de places disponibles dans le serveur et gérer les threads à nettoyer.
 Ajout d'un thread pour gérer le nettoyage des threads.
 Ajout d'un mutex pour gérer l'accès aux variables globales (Nous avons décidé qu'un seul mutex suffisait pour gérer l'accès à toutes variables globales puisque ils sont tous étroitement liées).
-D'aileurs, le mutex ou les sémaphores sont surtout utilisés au niveau du fichier **`commandes.c`**, seul quelques moment comme l'initialisation sont sur le fichier **`serveur.c`**.
+D'ailleurs, le mutex ou les sémaphores sont surtout utilisés au niveau du fichier **`commandes.c`**, seul quelques moment comme l'initialisation sont sur le fichier **`serveur.c`**.
 L'ajout de la gestion des signaux pour le `CTRL + C` ou la modification de l'affichage des messages ont été ajouté.
 
 
@@ -212,7 +212,7 @@ sequenceDiagram
 
 Nous avons rencontré des difficultés par rapport au découpage des commandes en token: seul le premier mot entré été renvoyé au destinataire pour la commande message privé. 
 Ceci a vite été résolu en revoyant le code.
-Puis nous avons eu quelque difficulté pour les commandes "sudo quit" et "sudo kick" pour la fermeture de manière propre de la connexion client et que côté client, il gère cette fermeture.
+Puis nous avons eu quelques difficultés pour les commandes "sudo quit" et "sudo kick" pour la fermeture de manière propre de la connexion client et que côté client, il gère cette fermeture.
 Enfin nous avons surtout eu des difficultés pour comprendre comment, pourquoi et dans quel cas il fallait employer les mutex, sémaphores et mémoire partagée.
 Nous avons donc dû faire des recherches et des tests pour comprendre comment les utiliser et les implémenter dans notre code.
 Par exemple les mutex nous avons fait le choix dans un premier temps de l'utilisé que pour l'écriture des variables partagées.

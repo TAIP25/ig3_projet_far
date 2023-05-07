@@ -21,13 +21,6 @@
 //Liste des descripteurs de socket des clients
 extern int dSCList[MAX_CLIENT];
 
-//Création d'un tableau statique de 10 addresse de socket
-//aC = adresse du client
-extern struct sockaddr_in aC[MAX_CLIENT];
-
-//Stocke la taille de la structure aC dans lg
-extern socklen_t lg[MAX_CLIENT];
-
 //Création de thread pour les clients
 //pthread_t est un type de donnée qui représente un thread
 extern pthread_t threadC[MAX_CLIENT];

@@ -7,8 +7,16 @@
 #include <semaphore.h>
 #include <unistd.h>
 #include <signal.h>
+
 #include "global.h"
 #include "commandes.h"
+
+//Création d'un tableau statique d'addresse de socket
+//aC = adresse du client
+struct sockaddr_in aC[MAX_CLIENT];
+
+//Stocke la taille de la structure aC dans lg
+socklen_t lg[MAX_CLIENT];
 
 //Initialise la liste des descripteurs de socket des clients à -1
 void initDSCList(){
@@ -53,6 +61,8 @@ void * clientReceive(void* arg){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
+
+    printf("[INFO] Un client s'est connecté\n");
 
     char msgPseudo[MAX_CHAR] = "[NEED] Veuillez entrer votre pseudo: ";
     msgPseudo[strlen(msgPseudo) - 1] = '\0';
@@ -353,7 +363,6 @@ int main(int argc, char *argv[]) {
                     exit(0);
                 }
 
-                printf("[INFO] Un client s'est connecté\n");
                 pthread_mutex_lock(&mutex);
                 pthread_create(&threadC[i], NULL, clientReceive, (void *) (long) i);
                 pthread_mutex_unlock(&mutex);

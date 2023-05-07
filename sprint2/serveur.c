@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
+#include <signal.h>
 #include "global.h"
 #include "commandes.h"
 
@@ -222,6 +223,13 @@ void * threadMemory(){
     pthread_exit(0);
 }
 
+//Fonction de gestion des signaux
+void sigint_handler(int sig) {
+    printf("\n[INFO] Signal CTRL+C reçu, fermeture du serveur\n");
+    exit(0);
+}
+
+
 //Fonction principale
 int main(int argc, char *argv[]) {
 
@@ -234,6 +242,9 @@ int main(int argc, char *argv[]) {
 
     //Initialise la liste de structure d'adresse de socket
     initAC();
+
+    //Gestion des signaux
+    signal(SIGINT, sigint_handler);
 
     //Initialise la liste des descripteurs de socket des clients à -1
     initDSCList();
@@ -316,6 +327,7 @@ int main(int argc, char *argv[]) {
     //Dès qu'un client se connecte, un thread est créé pour gérer la connexion
 
     printf("[INFO] Serveur lancé\n");
+
     
     while(1) {
 

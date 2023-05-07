@@ -5,12 +5,13 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 #include "global.h"
+#include "commandes.h"
 
-void * messageReceive(void* pClient_socket) {
+int client_socket;
 
-    // On récupère le descripteur de socket (on cast en long pour éviter un warning)
-    int client_socket = (long) pClient_socket;
+void * messageReceive() {
 
     char message[MAX_CHAR] = {0};
 
@@ -31,10 +32,7 @@ void * messageReceive(void* pClient_socket) {
     }
 }
 
-void * messageSend(void * pClient_socket) {
-
-    // On récupère le descripteur de socket (on cast en long pour éviter un warning)
-    int client_socket = (long) pClient_socket;
+void * messageSend() {
 
     while(1) {
         char message[MAX_CHAR] = {0};
@@ -60,6 +58,16 @@ void * messageSend(void * pClient_socket) {
     }
 }
 
+//gestion de signaux
+void sigint_handler(int sig) {
+    char messageStop[MAX_CHAR] = "sudo quit";
+    printf("\n[INFO] Signal CTRL+C reçu, fermeture de la messagerie\n");
+    //si un signal CTRL+C est reçu, on ferme le client mais pas le serveur
+    send(client_socket, messageStop, strlen(messageStop) + 1 , 0);
+    exit(0);
+}
+
+
 int main(int argc, char *argv[]) {
 
     // VERIFICATION DU NOMBRE D'ARGUMENTS
@@ -79,7 +87,7 @@ int main(int argc, char *argv[]) {
     // PF_INET = Protocole IP
     // SOCK_STREAM = Protocole TCP
     // 0 = Protocole par défaut
-    int client_socket = socket(AF_INET, SOCK_STREAM, 0);
+    client_socket = socket(AF_INET, SOCK_STREAM, 0);
 
     // Gestion d'erreur
     if (client_socket == -1) {
@@ -127,12 +135,15 @@ int main(int argc, char *argv[]) {
 
     printf("[INFO] Dans la liste d'attente...\n");
 
+    //gestion de signaux
+    signal(SIGINT, sigint_handler);
+
     // Cast en long pour éviter un warning
     pthread_t threadReceive;
     pthread_t threadSend;
 
-    pthread_create(&threadReceive, NULL, messageReceive, (void *) (long) client_socket);
-    pthread_create(&threadSend, NULL, messageSend, (void *) (long) client_socket);
+    pthread_create(&threadReceive, NULL, messageReceive, NULL);
+    pthread_create(&threadSend, NULL, messageSend, NULL);
 
     pthread_join(threadSend, NULL);
 

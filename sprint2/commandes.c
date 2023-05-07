@@ -29,10 +29,10 @@ int isConnected(int dSC){
 // post: Attention, si le client n'est pas connecté, une erreur est throw
 int getDSC(int id){
     // Overkill mais mieux si il y a un scale up
-    if(isConnected(dSCList[id])){
-        pthread_mutex_lock(&mutex);
-        int dSC = dSCList[id];
-        pthread_mutex_unlock(&mutex);
+    pthread_mutex_lock(&mutex);
+    int dSC = dSCList[id];
+    pthread_mutex_unlock(&mutex);
+    if(isConnected(dSC)){
         return dSC;
     }
     else{
@@ -218,12 +218,15 @@ void sendQuit(int dSC){
     pthread_mutex_unlock(&mutex);
 
     // Incrémente le nombre de place disponible dans le semaphore
-    sem_post(&semaphore);
+    sem_post(&semaphoreSlot);
 
-    // Exit du thread
-    // void pthread_exit(void *retval);
-    // retval = valeur de retour
-    pthread_exit(&threadC[id]);
+    // Informe le threadMemory qu'il peut supprimer le thread
+    pthread_mutex_lock(&mutex);
+    threadEnd[id] = 1;
+    pthread_mutex_unlock(&mutex);
+
+    // Incrémente le nombre de thread à nettoyer
+    sem_post(&semaphoreMemory);
 }
 
 // Appelé quand le client envoie la commande "sudo list"
@@ -326,12 +329,15 @@ void sendKick(int idS, int idR){
     pthread_mutex_unlock(&mutex);
 
     // Incrémente le nombre de place disponible dans le semaphore
-    sem_post(&semaphore);
+    sem_post(&semaphoreSlot);
 
-    // Exit du thread
-    // void pthread_exit(void *retval);
-    // retval = valeur de retour
-    pthread_exit(&threadC[idR]);
+    // Informe le threadMemory qu'il peut supprimer le thread
+    pthread_mutex_lock(&mutex);
+    threadEnd[idR] = 1;
+    pthread_mutex_unlock(&mutex);
+
+    // Incrémente le nombre de thread à nettoyer
+    sem_post(&semaphoreMemory);
 }
 
 // Vérifie si le pseudo est correct

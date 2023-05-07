@@ -5,6 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <unistd.h>
 #include "global.h"
 #include "commandes.h"
 
@@ -29,6 +30,13 @@ void initAC(){
     }
 }
 
+//Initialise la liste de booléen à 0
+void initThreadEnd(){
+    for(int i = 0; i < MAX_CLIENT; i++){
+        threadEnd[i] = 0;
+    }
+}
+
 
 //Gère la connexion d'un client
 //arg = l'indice du descripteur de socket du client
@@ -46,6 +54,7 @@ void * clientReceive(void* arg){
     }
 
     char msgPseudo[MAX_CHAR] = "[NEED] Veuillez entrer votre pseudo: ";
+    msgPseudo[strlen(msgPseudo) - 1] = '\0';
     
     if(send(getDSC(i), msgPseudo, strlen(msgPseudo) + 1, 0) == -1){
         perror("Erreur lors de l'envoie du message");
@@ -68,7 +77,7 @@ void * clientReceive(void* arg){
         exit(0);
     }
 
-    while (1) {
+    while (!threadEnd[i]) {
 
         //Reçoit un message du client i
         //int recv(int dSC, void *msg, int lg, int flags)
@@ -81,6 +90,7 @@ void * clientReceive(void* arg){
 
         //Vérifie si la connexion est interrompu ou si une erreur est survenue
         if(recvC == 0 ){
+            sendQuit(getDSC(i));
             break;
         }
         else if(recvC == -1){
@@ -174,41 +184,43 @@ void * clientReceive(void* arg){
                 sendRename(arg, getDSC(i));
             }
             else{
-
                 //Avertis le client que la commande n'existe pas
                 char* errorMsg = "[ERROR] Commande inconnue, tapez \"sudo help\" pour afficher la liste des commandes";
-                send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
+                send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0);
             }
         }
         else{
             //Envoie le message reçu à tous les clients (commande par défaut)
             sendAll(msg, getDSC(i));
         }
-        
     }
 
-    //Exit du thread
-    //void pthread_exit(void *retval);
-    //retval = valeur de retour
-    pthread_exit(&threadC[i]);
+    //Le threadMemory va gérer la fermeture des threads
+    //On fait ceci pour éviter un warning et pour éviter de fermer le thread ici
+    while(1){
+        sleep(1);
+        printf("[INFO] Un thread est en attente de fermeture\n");
+    }
+
+    //Ne s'exécute jamais
+    pthread_exit(0);
 }
 
-//Fonction permettant de gérer les threads
-//Pas encore fonctionnel (il faut un semaphore pour gérer les threads)
-/*
+//Fonction permettant de gérer la fermeture des threads
 void * threadMemory(){
     while(1){
+        sem_wait(&semaphoreMemory);
         pthread_mutex_lock(&mutex);
         for(int i = 0; i < MAX_CLIENT; i++){
-            
             if(threadEnd[i] == 1){
-                pthread_exit(&threadC[i]);
+                pthread_cancel(threadC[i]);
+                threadEnd[i] = 0;
             }
         }
         pthread_mutex_unlock(&mutex);
     }
+    pthread_exit(0);
 }
-*/
 
 //Fonction principale
 int main(int argc, char *argv[]) {
@@ -229,16 +241,25 @@ int main(int argc, char *argv[]) {
     //Initialise les pseudos des clients à l'id du client
     initPseudoList();
 
-    //Initialise le semaphore
+    //Initialise la liste des threads à 0
+    initThreadEnd();
+
+    //Initialise les semaphores
     //int sem_init(sem_t *sem, int pshared, unsigned int value);
     //Renvoie 0 en cas de succès et -1 en cas d'échec
     //sem = pointeur sur le semaphore
     //pshared = 0 si le semaphore est partagé entre les threads d'un même processus, 1 si le semaphore est partagé entre les processus
     //value = valeur initiale du semaphore
-    if(sem_init(&semaphore, 0, MAX_CLIENT) == -1){
+    if(sem_init(&semaphoreSlot, 0, MAX_CLIENT) == -1){
         perror("Erreur initialisation semaphore\n");
         exit(0);
     }
+
+    if(sem_init(&semaphoreMemory, 0, 0) == -1){
+        perror("Erreur initialisation semaphore\n");
+        exit(0);
+    }
+
 
     //Création de la structure aS
     //aS = adresse du serveur
@@ -288,8 +309,8 @@ int main(int argc, char *argv[]) {
 
 
     //Création du thread pour la gestion de la mémoire partagée pour les autres threads
-    //pthread_t threadClean;
-    //pthread_create(&threadClean, NULL, threadMemory, NULL);
+    pthread_t threadClean;
+    pthread_create(&threadClean, NULL, threadMemory, NULL);
 
     //Gestion des clients
     //Dès qu'un client se connecte, un thread est créé pour gérer la connexion
@@ -302,7 +323,7 @@ int main(int argc, char *argv[]) {
         //int sem_wait(sem_t *sem);
         //Renvoie 0 en cas de succès et -1 en cas d'échec
         //sem = pointeur sur le semaphore
-        if(sem_wait(&semaphore) == -1){
+        if(sem_wait(&semaphoreSlot) == -1){
             perror("Erreur lors de l'attente du semaphore\n");
             exit(0);
         }

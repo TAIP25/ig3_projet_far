@@ -28,7 +28,10 @@ char pseudoList[MAX_CLIENT][MAX_PSEUDO];
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //Création d'un sémaphore indiquant le nombre de places restantes sur le serveur
-sem_t semaphore;
+sem_t semaphoreSlot;
 
 //Création d'une liste de booléen pour savoir si un thread doit être terminé
 int threadEnd[MAX_CLIENT];
+
+//Création d'un sémaphore indiquant le nombre de threads à nettoyer
+sem_t semaphoreMemory;

@@ -40,9 +40,12 @@ extern char pseudoList[MAX_CLIENT][MAX_PSEUDO];
 extern pthread_mutex_t mutex;
 
 //Création d'un sémaphore indiquant le nombre de places restantes sur le serveur
-extern sem_t semaphore;
+extern sem_t semaphoreSlot;
 
 //Création d'une liste de booléen pour savoir si un thread doit être terminé
 extern int threadEnd[MAX_CLIENT];
+
+//Création d'un sémaphore indiquant le nombre de threads à nettoyer
+extern sem_t semaphoreMemory;
 
 #endif

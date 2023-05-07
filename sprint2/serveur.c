@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include "global.h"
 #include "commandes.h"
 
@@ -21,6 +22,14 @@ void initPseudoList(){
     }
 }
 
+//Initialise la liste de structure d'adresse de socket
+void initAC(){
+    for(int i = 0; i < MAX_CLIENT; i++){
+        lg[i] = sizeof(aC[i]);
+    }
+}
+
+
 //Gère la connexion d'un client
 //arg = l'indice du descripteur de socket du client
 void * clientReceive(void* arg){
@@ -28,6 +37,36 @@ void * clientReceive(void* arg){
     int i = (long) arg;
 
     char msg[MAX_CHAR];
+
+    char msgWait[MAX_CHAR] = "[INFO] Vous êtes sorti de la file d'attente, bienvenue sur le serveur";
+
+    if(send(getDSC(i), msgWait, strlen(msgWait) + 1, 0) == -1){
+        perror("Erreur lors de l'envoie du message");
+        exit(0);
+    }
+
+    char msgPseudo[MAX_CHAR] = "[NEED] Veuillez entrer votre pseudo: ";
+    
+    if(send(getDSC(i), msgPseudo, strlen(msgPseudo) + 1, 0) == -1){
+        perror("Erreur lors de l'envoie du message");
+        exit(0);
+    }
+
+    //Reçoit le pseudo du client
+    if(recv(getDSC(i), msg, sizeof(msg), 0) == -1){
+        perror("Erreur lors de la réception du message");
+        exit(0);
+    }
+
+    sendRename(msg, getDSC(i));
+
+    //Envoie un message de bienvenue au client
+    char msgWelcome[MAX_CHAR] = "[INFO] C'est le début de votre conversation. Pour voir la liste des commandes faites \"sudo help\"";
+    
+    if(send(getDSC(i), msgWelcome, strlen(msgWelcome) + 1, 0) == -1){
+        perror("Erreur lors de l'envoie du message");
+        exit(0);
+    }
 
     while (1) {
 
@@ -154,22 +193,52 @@ void * clientReceive(void* arg){
     pthread_exit(&threadC[i]);
 }
 
+//Fonction permettant de gérer les threads
+//Pas encore fonctionnel (il faut un semaphore pour gérer les threads)
+/*
+void * threadMemory(){
+    while(1){
+        pthread_mutex_lock(&mutex);
+        for(int i = 0; i < MAX_CLIENT; i++){
+            
+            if(threadEnd[i] == 1){
+                pthread_exit(&threadC[i]);
+            }
+        }
+        pthread_mutex_unlock(&mutex);
+    }
+}
+*/
+
+//Fonction principale
 int main(int argc, char *argv[]) {
 
     //Vérification du nombre d'argument
     //argv[0] = port du serveur
     if(argc != 2){
-        printf("[ERR0R] Erreur nombre d'argument\n");
+        printf("[ERROR] Erreur nombre d'argument\n");
         exit(0);
     }
 
-    pthread_mutex_lock(&mutex);
+    //Initialise la liste de structure d'adresse de socket
+    initAC();
+
     //Initialise la liste des descripteurs de socket des clients à -1
     initDSCList();
 
     //Initialise les pseudos des clients à l'id du client
     initPseudoList();
-    pthread_mutex_unlock(&mutex);
+
+    //Initialise le semaphore
+    //int sem_init(sem_t *sem, int pshared, unsigned int value);
+    //Renvoie 0 en cas de succès et -1 en cas d'échec
+    //sem = pointeur sur le semaphore
+    //pshared = 0 si le semaphore est partagé entre les threads d'un même processus, 1 si le semaphore est partagé entre les processus
+    //value = valeur initiale du semaphore
+    if(sem_init(&semaphore, 0, MAX_CLIENT) == -1){
+        perror("Erreur initialisation semaphore\n");
+        exit(0);
+    }
 
     //Création de la structure aS
     //aS = adresse du serveur
@@ -217,41 +286,45 @@ int main(int argc, char *argv[]) {
     //nbC = nombre de connexion en attente
     listen(dS, 2);
 
-    //Création d'un tableau statique de 10 addresse de socket
-    //aC = adresse du client
-    struct sockaddr_in aC[MAX_CLIENT];
-    
 
-    //Stocke la taille de la structure aC dans lg
-    socklen_t lg[MAX_CLIENT];
-
-    for (int i = 0; i < MAX_CLIENT; i++) {
-        lg[i] = sizeof(aC[i]);
-    }
+    //Création du thread pour la gestion de la mémoire partagée pour les autres threads
+    //pthread_t threadClean;
+    //pthread_create(&threadClean, NULL, threadMemory, NULL);
 
     //Gestion des clients
     //Dès qu'un client se connecte, un thread est créé pour gérer la connexion
 
     printf("[INFO] Serveur lancé\n");
     
-    int i = 0;
     while(1) {
-        if(i == MAX_CLIENT){
-            i = 0;
+
+        //Bloque le thread tant qu'il n'y a pas de place
+        //int sem_wait(sem_t *sem);
+        //Renvoie 0 en cas de succès et -1 en cas d'échec
+        //sem = pointeur sur le semaphore
+        if(sem_wait(&semaphore) == -1){
+            perror("Erreur lors de l'attente du semaphore\n");
+            exit(0);
         }
-        if(dSCList[i] == -1){
-            //Accepte la connexion du client
-            //int accept(int dS, struct sockaddr *aC, socklen_t *lg)
-            //Renvoie le descripteur de socket du client
-            //dS = descripteur de socket
-            //&aC = adresse du client
-            //&lg = l'adresse de la taille de la structure aC
-            pthread_mutex_lock(&mutex);
-            dSCList[i] = accept(dS, (struct sockaddr*) &aC[i],&lg[i]);
-            pthread_mutex_unlock(&mutex);
-            printf("[INFO] Le client %s est connecté\n", pseudoList[i]);
-            pthread_create(&threadC[i], NULL, clientReceive, (void *) (long) i);
-            i++;
+
+        for(int i = 0; i < MAX_CLIENT; i++){
+            if(dSCList[i] == -1){
+                //Accepte la connexion du client
+                //int accept(int dS, struct sockaddr *aC, socklen_t *lg)
+                //Renvoie le descripteur de socket du client
+                //dS = descripteur de socket
+                //&aC = adresse du client
+                //&lg = l'adresse de la taille de la structure aC
+                if((dSCList[i] = accept(dS, (struct sockaddr*) &aC[i], &lg[i])) == -1){
+                    perror("accept");
+                    exit(0);
+                }
+
+                printf("[INFO] Un client s'est connecté\n");
+                pthread_mutex_lock(&mutex);
+                pthread_create(&threadC[i], NULL, clientReceive, (void *) (long) i);
+                pthread_mutex_unlock(&mutex);
+            }
         }
     }
 

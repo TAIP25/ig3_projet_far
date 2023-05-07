@@ -11,11 +11,14 @@
 // pre:
 // post: isConnected(dSC) == 1 || isConnected(dSC) == 0
 int isConnected(int dSC){
+    pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
         if(dSCList[i] == dSC){
+            pthread_mutex_unlock(&mutex);
             return 1;
         }
     }
+    pthread_mutex_unlock(&mutex);
     return 0;
 }
 
@@ -27,13 +30,15 @@ int isConnected(int dSC){
 int getDSC(int id){
     // Overkill mais mieux si il y a un scale up
     if(isConnected(dSCList[id])){
-        return dSCList[id];
+        pthread_mutex_lock(&mutex);
+        int dSC = dSCList[id];
+        pthread_mutex_unlock(&mutex);
+        return dSC;
     }
     else{
         perror("Erreur lors de la récupération du descripteur de socket du client");
         exit(0);
     }
-    
 }
 
 // Recupère l'id du client à partir de sa dSC
@@ -42,11 +47,14 @@ int getDSC(int id){
 // post: getID(dSC) == id, 0 <= id < MAX_CLIENT
 // post: Attention, si le client n'est pas connecté, une erreur est throw
 int getID(int dSC){
+    pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
         if(dSCList[i] == dSC){
+            pthread_mutex_unlock(&mutex);
             return i;
         }
     }
+    pthread_mutex_unlock(&mutex);
     perror("Erreur lors de la récupération de l'id du client");
     exit(0);
 }
@@ -60,7 +68,11 @@ char* getPseudoByDSC(int dSC){
         perror("Erreur le client n'est pas connecté");
         exit(0);
     }
-    return pseudoList[getID(dSC)];
+    int id = getID(dSC);
+    pthread_mutex_lock(&mutex);
+    char * pseudo = pseudoList[id];
+    pthread_mutex_unlock(&mutex);
+    return pseudo;
 }
 
 // Recupère le dSC du client à partir de son pseudo
@@ -68,11 +80,14 @@ char* getPseudoByDSC(int dSC){
 // post: getDSC(pseudo) == dSC
 // post: Attention, si le client n'est pas connecté => return -1
 int getDSCByPseudo(char* pseudo){
+    pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
         if(strcmp(pseudoList[i], pseudo) == 0){
+            pthread_mutex_unlock(&mutex);
             return i;
         }
     }
+    pthread_mutex_unlock(&mutex);
     return -1;
 }
 
@@ -89,7 +104,7 @@ void sendAll(char* msg, int dSC){
     
     char infoMsg[MAX_CHAR] = "[BROADCAST] ";
     strcat(infoMsg, msg);
-
+    pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
         if(dSCList[i] != dSC && dSCList[i] != -1){
             
@@ -106,6 +121,7 @@ void sendAll(char* msg, int dSC){
             }
         }
     }
+    pthread_mutex_unlock(&mutex);
 }
 
 // Appelé quand le client envoie la commande "sudo mp <id> <msg>"
@@ -201,6 +217,9 @@ void sendQuit(int dSC){
     sprintf(pseudoList[id], "Client%d", id);
     pthread_mutex_unlock(&mutex);
 
+    // Incrémente le nombre de place disponible dans le semaphore
+    sem_post(&semaphore);
+
     // Exit du thread
     // void pthread_exit(void *retval);
     // retval = valeur de retour
@@ -217,6 +236,7 @@ void sendList(int dSC){
         exit(0);
     }
     char list[MAX_CHAR*MAX_CLIENT/10] = "[INFO] Liste des clients connectés :\n";
+    pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
         if(dSCList[i] != -1){
             
@@ -248,6 +268,8 @@ void sendList(int dSC){
             strcat(list, "\n");
         }
     }
+    pthread_mutex_unlock(&mutex);
+
     // Supprime le dernier \n
     list[strlen(list)-1] = '\0';
 
@@ -270,7 +292,10 @@ void sendKick(int idS, int idR){
     
     // Envoie un message de prévention au client
     char kick[MAX_CHAR] = "[INFO] Vous avez été kick du serveur par ";
+    
+    pthread_mutex_lock(&mutex);
     strcat(kick, pseudoList[idS]);
+    pthread_mutex_unlock(&mutex);
 
     if(send(getDSC(idR), kick, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message");
@@ -299,7 +324,10 @@ void sendKick(int idS, int idR){
     pthread_mutex_lock(&mutex);
     sprintf(pseudoList[idR], "Client%d", idR);
     pthread_mutex_unlock(&mutex);
-    
+
+    // Incrémente le nombre de place disponible dans le semaphore
+    sem_post(&semaphore);
+
     // Exit du thread
     // void pthread_exit(void *retval);
     // retval = valeur de retour
@@ -343,12 +371,14 @@ void sendRename(char* pseudo, int dSC){
     // Avant de changer le pseudo, on vérifie qu'il n'est pas déjà pris, si c'est le cas on envoie un message pour prévenir le client que le pseudo est déjà pris
     // On vérifie aussi que le pseudo ne contient pas de caractère interdit d'espace, de retour à la ligne etc ...
     if(properPseudo(pseudo) == 1){
-
-        printf("[INFO] Le client %s a changé son pseudo en %s\n", pseudoList[getID(dSC)], pseudo);
+        int id = getID(dSC);
+        pthread_mutex_lock(&mutex);
+        printf("[INFO] Le client %s a changé son pseudo en %s\n", pseudoList[id], pseudo);
+        pthread_mutex_unlock(&mutex);
         
-        //pthread_mutex_lock(&mutex);
-        strcpy(pseudoList[getID(dSC)], pseudo);
-        //pthread_mutex_unlock(&mutex);
+        pthread_mutex_lock(&mutex);
+        strcpy(pseudoList[id], pseudo);
+        pthread_mutex_unlock(&mutex);
 
         char rename[MAX_CHAR] = "[INFO] Votre pseudo a été changé en ";
         strcat(rename, pseudo);

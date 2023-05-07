@@ -36,31 +36,6 @@ void * messageSend(void * pClient_socket) {
     // On récupère le descripteur de socket (on cast en long pour éviter un warning)
     int client_socket = (long) pClient_socket;
 
-    // Demande le pseudo du client
-    char pseudo[MAX_CHAR] = {0};
-    
-    printf("[NEED] Veuillez entrer votre pseudo: ");
-    fgets(pseudo, MAX_CHAR, stdin);
-    if(pseudo[strlen(pseudo) - 1] == '\n'){
-        pseudo[strlen(pseudo) - 1] = '\0';
-    }
-
-    // Attention pour que ceci marche if faut concatener le pseudo avec sudo rename <pseudo>
-    char pseudoCommand[MAX_CHAR] = "sudo rename ";
-    strcat(pseudoCommand, pseudo);
-
-    // Envoie le pseudo au serveur
-    // int send(int dS, const void *m, size_t lg, int flags)
-    // Renvoie le nombre d'octet envoyé si la connexion est réussi et -1 si elle échoue
-    // dS = descripteur de socket
-    // m = message
-    // strlen(m) + 1 = taille du message
-    // 0 = protocole par défaut
-    send(client_socket, pseudoCommand, strlen(pseudoCommand) + 1 , 0);
-    
-    // N'importe quel client peut commencer la conversation
-    printf("[INFO] C'est le début de votre conversation. Pour voir la liste des commandes faites \"sudo help\"\n");
-
     while(1) {
         char message[MAX_CHAR] = {0};
                 
@@ -149,6 +124,8 @@ int main(int argc, char *argv[]) {
         perror("Erreur lors de la connexion du client au serveur");
         exit(0);
     }
+
+    printf("[INFO] Dans la liste d'attente...\n");
 
     // Cast en long pour éviter un warning
     pthread_t threadReceive;

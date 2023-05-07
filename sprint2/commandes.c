@@ -207,21 +207,9 @@ void sendQuit(int dSC){
         exit(0);
     }
 
-    pthread_mutex_lock(&mutex);
-    dSCList[id] = -1;
-    pthread_mutex_unlock(&mutex);
-
-    printf("[INFO] Le client %s s'est déconnecté\n", pseudoList[id]);
-
-    pthread_mutex_lock(&mutex);
-    sprintf(pseudoList[id], "Client%d", id);
-    pthread_mutex_unlock(&mutex);
-
-    // Incrémente le nombre de place disponible dans le semaphore
-    sem_post(&semaphoreSlot);
-
     // Informe le threadMemory qu'il peut supprimer le thread
     pthread_mutex_lock(&mutex);
+    printf("[INFO] Le client %s s'est déconnecté\n", pseudoList[id]);
     threadEnd[id] = 1;
     pthread_mutex_unlock(&mutex);
 
@@ -318,21 +306,9 @@ void sendKick(int idS, int idR){
         exit(0);
     }
 
-    pthread_mutex_lock(&mutex);
-    dSCList[idR] = -1;
-    pthread_mutex_unlock(&mutex);
-
-    printf("[INFO] Le client %s s'est fait kick\n", pseudoList[idR]);
-
-    pthread_mutex_lock(&mutex);
-    sprintf(pseudoList[idR], "Client%d", idR);
-    pthread_mutex_unlock(&mutex);
-
-    // Incrémente le nombre de place disponible dans le semaphore
-    sem_post(&semaphoreSlot);
-
     // Informe le threadMemory qu'il peut supprimer le thread
     pthread_mutex_lock(&mutex);
+    printf("[INFO] Le client %s s'est fait kick\n", pseudoList[idR]);
     threadEnd[idR] = 1;
     pthread_mutex_unlock(&mutex);
 

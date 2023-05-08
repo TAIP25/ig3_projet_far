@@ -47,8 +47,8 @@ Tout d'abord il y a le fichier **`commandes.txt`** qui contient toutes les comma
 ### **`commandes.c`** et **`commandes.h`**
 
 Pour nous organiser nous avons détaché la partie commande du projet dans un fichier différent qui s'appelle **`commandes.c`** et **`commandes.h`**.
-Ils contiennent les différentes commandes explicité dans le fichier **`commandes.txt`**.
-Cela permet de mieux organiser le code et de mieux comprendre le fonctionnement du programme et que le fichier **`serveur.c`** soit plus compacte.
+Ils contiennent les différentes commandes explicitées dans le fichier **`commandes.txt`**.
+Cela permet de mieux organiser le code et de mieux comprendre le fonctionnement du programme et que le fichier **`serveur.c`** soit plus compact.
 
 ### **`global.c`** et **`global.h`**
 
@@ -58,15 +58,15 @@ Cela permet de modifier qu'une seule fois une variable globale si on veut change
 
 ### **`client.c`**
 
-Ce fichier n'a presque pas changé depuis le sprint 1. Il contient le code du client. Nous avons modifié quelques partie du code comment l'ajout de la gestion des signaux pour le **`CTRL + C`** ou la modification de l'affichage des messages.
+Ce fichier n'a presque pas changé depuis le sprint 1. Il contient le code du client. Nous avons modifié quelques parties du code comment l'ajout de la gestion des signaux pour le **`CTRL + C`** ou la modification de l'affichage des messages.
 
 ### **`serveur.c`**
 
 Il a été modifié pour gérer tout le protocole de communication.
 L'ajout de sémaphores pour gérer le nombre de places disponibles dans le serveur et gérer les threads à nettoyer.
 Ajout d'un thread pour gérer le nettoyage des threads.
-Ajout d'un mutex pour gérer l'accès aux variables globales (Nous avons décidé qu'un seul mutex suffisait pour gérer l'accès à toutes variables globales puisque ils sont tous étroitement liées).
-D'ailleurs, le mutex ou les sémaphores sont surtout utilisés au niveau du fichier **`commandes.c`**, seul quelques cas comme l'initialisation sont sur le fichier **`serveur.c`**.
+Ajout d'un mutex pour gérer l'accès aux variables globales (Nous avons décidé qu'un seul mutex suffisait pour gérer l'accès à toutes variables globales puisqu'ils sont tous étroitement liées).
+D'ailleurs, le mutex ou les sémaphores sont surtout utilisés au niveau du fichier **`commandes.c`**, seuls quelques cas comme l'initialisation ou autres sont sur le fichier **`serveur.c`**.
 L'ajout de la gestion des signaux pour le `CTRL + C` ou la modification de l'affichage des messages ont été ajouté.
 
 
@@ -133,7 +133,7 @@ Pour afficher les différents diagrammes de séquence, **il faut installer l'ext
 ```mermaid
 sequenceDiagram
         participant Serveur
-        box L'ensembles des clients
+        box L'ensemble des clients
                 participant ClientLambda
                 participant AutresClients
         end
@@ -213,10 +213,10 @@ sequenceDiagram
 Nous avons rencontré des difficultés par rapport au découpage des commandes en token: seul le premier mot entré été renvoyé au destinataire pour la commande message privé. 
 Ceci a vite été résolu en revoyant le code.
 Puis nous avons eu quelques difficultés pour les commandes "sudo quit" et "sudo kick" pour la fermeture de manière propre de la connexion client et que côté client, il gère cette fermeture.
-Enfin nous avons surtout eu des difficultés pour comprendre comment, pourquoi et dans quel cas il fallait employer les mutex, sémaphores et mémoire partagée.
+Enfin nous avons surtout eu des difficultés pour comprendre comment, pourquoi et dans quel cas il fallait employer les mutex, sémaphores et mémoires partagée.
 Nous avons donc dû faire des recherches et des tests pour comprendre comment les utiliser et les implémenter dans notre code.
-Par exemple les mutex nous avons fait le choix dans un premier temps de l'utilisé que pour l'écriture des variables partagées.
-Puis nous avons décidé de l'utiliser aussi pour la lecture des variables partagées, fallait t'il en faire pour chaque variables partagées ou un seul pour tous, etc ...
+Par exemple les mutex nous avons fait le choix dans un premier temps de l'utiliser que pour l'écriture des variables partagées.
+Puis nous avons décidé de l'utiliser aussi pour la lecture des variables partagées, fallait-il en faire pour chaque variable partagée ou un seul pour tous, etc ...
 Enfin nous avons eu des difficultés pour la fermeture des threads avec la mémoire partagée, car nous avons dû faire des tests pour comprendre comment cela fonctionnait et comment l'implémenter dans notre code.
 
 ## Répartition du travail
@@ -225,10 +225,10 @@ Tout d'abord avant de coder, nous avons décidé en amont comment chaque étape 
 Vu que le travail en parallèle a bien fonctionné le dernier sprint, nous sommes restés sur la même optique.
 Puis la répartition du travail s'est faite de manière à pouvoir travailler continuellement sur un même aspect du projet et à pouvoir respecter les délais imposés.
 Pour ce sprint, nous avons déterminé que la partie client ne nécessitait pas de grands changements, donc nous avons tous les deux travaillé sur la partie serveur.
-Après s'être mis d'accord sur les commandes utilisables (voir fichier commandes.txt), Léon s'est occupé de la réorganisation des fichiers, implémentation de mutex, sémaphores, synchronisation des threads.
+Après s'être mis d'accord sur les commandes utilisables (voir fichier commandes.txt), Léon s'est occupé de la réorganisation des fichiers, implémentation de mutex, sémaphores, synchronisations des threads.
 En parallèle, Wayne s'est occupé de la gestion des signaux et des commandes: détection, découpage en token et implémentation des fonctions. Il a été important de travailler au même moment l'un a côté de l'autre en cas de blocage et d'incertitude sur la manière de procéder.
 Cependant, ce sprint étant plus long et avec l'impossibilité de se voir pendant les vacances scolaires, la fin de ce sprint par appel vocal sur discord.
-Enfin, nous avons fait des test chacun de notre côté pour les améliorations possibles.
+Enfin, nous avons fait des tests chacun de notre côté pour les améliorations possibles.
 
 ## Compilation et exécution
 

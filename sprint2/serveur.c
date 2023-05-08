@@ -115,10 +115,6 @@ void * clientReceive(void* arg){
 
         // Vérifie si la connexion est interrompu ou si une erreur est survenue
         if(recvC == 0 ){
-            if(threadEnd[i] == 0){
-                printf("\033[36m[INFO]\033[0m Un client s'est déconnecté sans informer le serveur\n");
-                sendQuit(getDSC(i));
-            }
             break;
         }
         else if(recvC == -1){

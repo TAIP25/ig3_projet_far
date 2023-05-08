@@ -18,6 +18,9 @@ struct sockaddr_in aC[MAX_CLIENT];
 // Stocke la taille de la structure aC dans lg
 socklen_t lg[MAX_CLIENT];
 
+// Descripteur de socket du serveur
+int dS; 
+
 // Initialise la liste des descripteurs de socket des clients à -1
 void initDSCList(){
     for(int i = 0; i < MAX_CLIENT; i++){
@@ -55,16 +58,16 @@ void * clientReceive(void* arg){
 
     char msg[MAX_CHAR];
 
-    char msgWait[MAX_CHAR] = "[INFO] Vous êtes sorti de la file d'attente, bienvenue sur le serveur";
+    char msgWait[MAX_CHAR] = "\033[36m[INFO]\033[0m Vous êtes sorti de la file d'attente, bienvenue sur le serveur";
 
     if(send(getDSC(i), msgWait, strlen(msgWait) + 1, 0) == -1){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
 
-    printf("[INFO] Un client s'est connecté\n");
+    printf("\033[36m[INFO]\033[0m Un client s'est connecté\n");
 
-    char msgPseudo[MAX_CHAR] = "[NEED] Veuillez entrer votre pseudo: ";
+    char msgPseudo[MAX_CHAR] = "\033[33m[NEED]\033[0m Veuillez entrer votre pseudo: ";
     msgPseudo[strlen(msgPseudo) - 1] = '\0';
     
     if(send(getDSC(i), msgPseudo, strlen(msgPseudo) + 1, 0) == -1){
@@ -73,15 +76,26 @@ void * clientReceive(void* arg){
     }
 
     // Reçoit le pseudo du client
-    if(recv(getDSC(i), msg, sizeof(msg), 0) == -1){
+    int recvPseudo = recv(getDSC(i), msg, sizeof(msg), 0);
+    if(recvPseudo == -1){
         perror("Erreur lors de la réception du message");
         exit(0);
     }
-
-    sendRename(msg, getDSC(i));
+    else if(recvPseudo == 0){
+        printf("\033[36m[INFO]\033[0m Un client s'est déconnecté sans informer le serveur\n");
+        sendQuit(getDSC(i));
+    }
+    
+    //Dans le cas où le client quite lors de la demande de pseudo
+    if(strcmp(msg, "sudo quit") == 0){
+        sendQuit(getDSC(i));
+    }
+    else{
+        sendRename(msg, getDSC(i));
+    }
 
     // Envoie un message de bienvenue au client
-    char msgWelcome[MAX_CHAR] = "[INFO] C'est le début de votre conversation. Pour voir la liste des commandes faites \"sudo help\"";
+    char msgWelcome[MAX_CHAR] = "\033[36m[INFO]\033[0m C'est le début de votre conversation. Pour voir la liste des commandes faites \"sudo help\"";
     
     if(send(getDSC(i), msgWelcome, strlen(msgWelcome) + 1, 0) == -1){
         perror("Erreur lors de l'envoie du message");
@@ -101,15 +115,18 @@ void * clientReceive(void* arg){
 
         // Vérifie si la connexion est interrompu ou si une erreur est survenue
         if(recvC == 0 ){
-            sendQuit(getDSC(i));
+            if(threadEnd[i] == 0){
+                printf("\033[36m[INFO]\033[0m Un client s'est déconnecté sans informer le serveur\n");
+                sendQuit(getDSC(i));
+            }
             break;
         }
         else if(recvC == -1){
-            perror("Erreur lors de la réception du message");
+            perror("Erreur lors de la réception du message B");
             exit(0);
         }
 
-        // printf("[INFO] Message reçu : %s\n", msg);
+        // printf("\033[36m[INFO]\033[0m Message reçu : %s\n", msg);
 
         // Permet de comparer les chaines de caractères
         // int strncmp(const char *s1, const char *s2, size_t n)
@@ -140,11 +157,23 @@ void * clientReceive(void* arg){
             char* arg;
             if(strncmp(commande, "mp", 2) == 0 || strncmp(commande, "kick", 4) == 0 || strncmp(commande, "rename", 6) == 0){
                 arg = strtok(NULL, " ");
+                if(arg == NULL || strcmp(arg, "") == 0){
+                    // Avertis le client que la commande est mal formulée
+                    char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m La commande est mal formulée";
+                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
+                    continue;
+                }
             }
             
             char* message;
             if(strncmp(commande, "all", 3) == 0 || strncmp(commande, "mp", 2) == 0){
                 message = strtok(NULL, "\0");
+                if(message == NULL || strcmp(message, "") == 0){
+                    // Avertis le client que la commande est mal formulée
+                    char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m La commande est mal formulée";
+                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
+                    continue;
+                }
             }
 
             // Vérifie si la commande est "sudo help"
@@ -183,11 +212,12 @@ void * clientReceive(void* arg){
                 if(getDSCByPseudo(arg) == -1){
                     // Avertis le client que le client <pseudo> n'existe pas
                     char errorMsg[MAX_CHAR] = "Le client n'existe pas";
-                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
-                    continue;
+                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0);
                 }
-                // Envoie un message de déconnexion au client <pseudo>
-                sendKick(i, getDSCByPseudo(arg));
+                else{
+                    // Envoie un message de déconnexion au client <pseudo>
+                    sendKick(i, getDSCByPseudo(arg));   
+                }
             }
             // Vérifie si la commande est "sudo rename <pseudo>"
             else if(strncmp(commande, "rename", 6) == 0){
@@ -196,7 +226,7 @@ void * clientReceive(void* arg){
             }
             else{
                 // Avertis le client que la commande n'existe pas
-                char* errorMsg = "[ERROR] Commande inconnue, tapez \"sudo help\" pour afficher la liste des commandes";
+                char* errorMsg = "\033[41m[ERROR]\033[0m Commande inconnue, tapez \"sudo help\" pour afficher la liste des commandes";
                 send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0);
             }
         }
@@ -209,8 +239,8 @@ void * clientReceive(void* arg){
     // Le threadMemory va gérer la fermeture des threads
     // On fait ceci pour éviter un warning et pour éviter de fermer le thread ici
     while(1){
+        printf("\033[36m[INFO]\033[0m Un thread est en attente de fermeture\n");
         sleep(1);
-        printf("[INFO] Un thread est en attente de fermeture\n");
     }
 
     // Ne s'exécute jamais
@@ -253,7 +283,16 @@ void * threadMemory(){
 
 // Fonction de gestion des signaux
 void sigint_handler(int sig) {
-    printf("\n[INFO] Signal CTRL+C reçu, fermeture du serveur\n");
+
+    printf("\n\033[36m[INFO]\033[0m Signal CTRL+C reçu, fermeture du serveur\n");
+
+    // Ferme la connexion du serveur
+    // int shutdown(int dS, int mode)
+    // Renvoie 0 si la fermeture est réussi et -1 si elle échoue
+    // dS = descripteur de socket
+    // 2 = fermeture de la connexion
+    shutdown(dS, 2);
+
     exit(0);
 }
 
@@ -264,7 +303,7 @@ int main(int argc, char *argv[]) {
     // Vérification du nombre d'argument
     // argv[0] = port du serveur
     if(argc != 2){
-        printf("[ERROR] Erreur nombre d'argument\n");
+        printf("\033[41m[ERROR]\033[0m Erreur nombre d'argument\n");
         exit(0);
     }
 
@@ -325,7 +364,7 @@ int main(int argc, char *argv[]) {
     // PF_INET = Protocole IP
     // SOCK_STREAM = Protocole TCP
     // 0 = Protocole par défaut
-    int dS = socket(PF_INET, SOCK_STREAM, 0);
+    dS = socket(PF_INET, SOCK_STREAM, 0);
     
     // Le socket est créé 
 
@@ -354,7 +393,7 @@ int main(int argc, char *argv[]) {
     // Gestion des clients
     // Dès qu'un client se connecte, un thread est créé pour gérer la connexion
 
-    printf("[INFO] Serveur lancé\n");
+    printf("\033[36m[INFO]\033[0m Serveur lancé\n");
 
     
     while(1) {
@@ -395,5 +434,7 @@ int main(int argc, char *argv[]) {
     // 2 = fermeture de la connexion
     shutdown(dS, 2);
 
-    printf("[INFO] Le serveur est fermé\n");
+    printf("\033[36m[INFO]\033[0m Le serveur est fermé\n");
+
+    exit(0);
 }

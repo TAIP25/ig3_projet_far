@@ -66,7 +66,7 @@ Il a été modifié pour gérer tout le protocole de communication.
 L'ajout de sémaphores pour gérer le nombre de places disponibles dans le serveur et gérer les threads à nettoyer.
 Ajout d'un thread pour gérer le nettoyage des threads.
 Ajout d'un mutex pour gérer l'accès aux variables globales (Nous avons décidé qu'un seul mutex suffisait pour gérer l'accès à toutes variables globales puisque ils sont tous étroitement liées).
-D'ailleurs, le mutex ou les sémaphores sont surtout utilisés au niveau du fichier **`commandes.c`**, seul quelques moment comme l'initialisation sont sur le fichier **`serveur.c`**.
+D'ailleurs, le mutex ou les sémaphores sont surtout utilisés au niveau du fichier **`commandes.c`**, seul quelques cas comme l'initialisation sont sur le fichier **`serveur.c`**.
 L'ajout de la gestion des signaux pour le `CTRL + C` ou la modification de l'affichage des messages ont été ajouté.
 
 

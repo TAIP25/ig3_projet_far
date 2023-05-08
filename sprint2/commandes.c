@@ -102,7 +102,7 @@ void sendAll(char* msg, int dSC){
         exit(0);
     }
     
-    char infoMsg[MAX_CHAR] = "[BROADCAST] ";
+    char infoMsg[MAX_CHAR] = "\033[31m[BROADCAST]\033[0m ";
     strcat(infoMsg, msg);
     pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
@@ -135,7 +135,7 @@ void sendMP(char* msg, int idS, int idR){
     }
 
     // Envoie un message au client idR
-    char infoMsg[MAX_CHAR] = "[MP] ";
+    char infoMsg[MAX_CHAR] = "\033[34m[MP]\033[0m ";
     strcat(infoMsg, getPseudoByDSC(getDSC(idS)));
     strcat(infoMsg, ": ");
     strcat(infoMsg, msg);
@@ -188,7 +188,7 @@ void sendQuit(int dSC){
     }
 
     // Envoie un message de prévention au client
-    char quit[MAX_CHAR] = "[INFO] Vous avez été déconnecté du serveur";
+    char quit[MAX_CHAR] = "\033[36m[INFO]\033[0m Vous avez été déconnecté du serveur";
     if(send(dSC, quit, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message");
         exit(0);
@@ -209,7 +209,7 @@ void sendQuit(int dSC){
 
     // Informe le threadMemory qu'il peut supprimer le thread
     pthread_mutex_lock(&mutex);
-    printf("[INFO] Le client %s s'est déconnecté\n", pseudoList[id]);
+    printf("\033[36m[INFO]\033[0m Le client %s s'est déconnecté\n", pseudoList[id]);
     threadEnd[id] = 1;
     pthread_mutex_unlock(&mutex);
 
@@ -226,7 +226,7 @@ void sendList(int dSC){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
-    char list[MAX_CHAR*MAX_CLIENT/10] = "[INFO] Liste des clients connectés :\n";
+    char list[MAX_CHAR*MAX_CLIENT/10] = "\033[36m[INFO]\033[0m Liste des clients connectés :\n";
     pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
         if(dSCList[i] != -1){
@@ -252,7 +252,7 @@ void sendList(int dSC){
             // Renvoie dest
             // dest = chaine de caractère dans laquelle ajouter src
             // src = chaine de caractère à ajouter à dest
-            strcat(list, "[INFO] ");
+            strcat(list, "\033[36m[INFO]\033[0m ");
             strcat(list, id);
             strcat(list, ": ");
             strcat(list, pseudo);
@@ -282,7 +282,7 @@ void sendKick(int idS, int idR){
     }
     
     // Envoie un message de prévention au client
-    char kick[MAX_CHAR] = "[INFO] Vous avez été kick du serveur par ";
+    char kick[MAX_CHAR] = "\033[36m[INFO]\033[0m Vous avez été kick du serveur par ";
     
     pthread_mutex_lock(&mutex);
     strcat(kick, pseudoList[idS]);
@@ -308,7 +308,7 @@ void sendKick(int idS, int idR){
 
     // Informe le threadMemory qu'il peut supprimer le thread
     pthread_mutex_lock(&mutex);
-    printf("[INFO] Le client %s s'est fait kick\n", pseudoList[idR]);
+    printf("\033[36m[INFO]\033[0m Le client %s s'est fait kick\n", pseudoList[idR]);
     threadEnd[idR] = 1;
     pthread_mutex_unlock(&mutex);
 
@@ -355,14 +355,14 @@ void sendRename(char* pseudo, int dSC){
     if(properPseudo(pseudo) == 1){
         int id = getID(dSC);
         pthread_mutex_lock(&mutex);
-        printf("[INFO] Le client %s a changé son pseudo en %s\n", pseudoList[id], pseudo);
+        printf("\033[36m[INFO]\033[0m Le client %s a changé son pseudo en %s\n", pseudoList[id], pseudo);
         pthread_mutex_unlock(&mutex);
         
         pthread_mutex_lock(&mutex);
         strcpy(pseudoList[id], pseudo);
         pthread_mutex_unlock(&mutex);
 
-        char rename[MAX_CHAR] = "[INFO] Votre pseudo a été changé en ";
+        char rename[MAX_CHAR] = "\033[36m[INFO]\033[0m Votre pseudo a été changé en ";
         strcat(rename, pseudo);
 
         if(send(dSC, rename, MAX_CHAR, 0) == -1){
@@ -371,7 +371,7 @@ void sendRename(char* pseudo, int dSC){
         }
     }
     else{
-        char rename[MAX_CHAR] = "[INFO] Votre pseudo n'a pas pu être changé car il est déjà pris ou contient des caractères interdits ou est trop long réessayez avec sudo rename <pseudo>";
+        char rename[MAX_CHAR] = "\033[36m[INFO]\033[0m Votre pseudo n'a pas pu être changé car il est déjà pris ou contient des caractères interdits ou est trop long réessayez avec sudo rename <pseudo>";
         if(send(dSC, rename, MAX_CHAR, 0) == -1){
             perror("Erreur lors de l'envoie du message");
             exit(0);

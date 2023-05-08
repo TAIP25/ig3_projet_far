@@ -21,7 +21,7 @@ void * messageReceive() {
         int recvC = recv(client_socket, message, sizeof(message), 0);
         if (recvC == -1 || recvC == 0) {
             if(recvC == 0){
-                printf("[INFO] Le serveur a fermé la connexion\n");
+                printf("\033[36m[INFO]\033[0m Le serveur a fermé la connexion\n");
             }
             else if(recvC == -1){
                 perror("Erreur lors de la réception du message");
@@ -43,7 +43,7 @@ void * messageSend() {
         }
 
         if(strlen(message) > MAX_CHAR){
-            printf("[ERROR] Erreur message trop grand\n");
+            printf("\033[41m[ERROR]\033[0m Erreur message trop grand\n");
         }
         else{
             // Envoie le message au serveur
@@ -61,9 +61,19 @@ void * messageSend() {
 //gestion de signaux
 void sigint_handler(int sig) {
     char messageStop[MAX_CHAR] = "sudo quit";
-    printf("\n[INFO] Signal CTRL+C reçu, fermeture de la messagerie\n");
+    
+    printf("\n\033[36m[INFO]\033[0m Signal CTRL+C reçu, fermeture de la messagerie\n");
+    
     //si un signal CTRL+C est reçu, on ferme le client mais pas le serveur
-    send(client_socket, messageStop, strlen(messageStop) + 1 , 0);
+    
+    if(send(client_socket, messageStop, strlen(messageStop) + 1 , 0) == -1){
+        perror("Erreur lors de l'envoi du message");
+    }
+
+    if(close(client_socket) == -1){
+        perror("Erreur lors de la fermeture de la socket");
+    }
+
     exit(0);
 }
 
@@ -75,8 +85,8 @@ int main(int argc, char *argv[]) {
     // argv[1] = adresse IP du serveur
     // argv[2] = port du serveur
     if (argc != 3) {
-        printf("[ERROR] Erreur nombre d'argument\n");
-        printf("[INFO] Usage: %s <adresse IP> <port>\n", argv[0]);
+        printf("\033[41m[ERROR]\033[0m Erreur nombre d'argument\n");
+        printf("\033[36m[INFO]\033[0m Usage: %s <adresse IP> <port>\n", argv[0]);
         exit(0);
     }
 
@@ -133,7 +143,7 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    printf("[INFO] Dans la liste d'attente...\n");
+    printf("\033[36m[INFO]\033[0m Dans la liste d'attente...\n");
 
     //gestion de signaux
     signal(SIGINT, sigint_handler);

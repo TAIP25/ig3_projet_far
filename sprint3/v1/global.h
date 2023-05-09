@@ -18,6 +18,18 @@
 // Taille maximale d'un pseudo
 #define MAX_PSEUDO 20
 
+// Nom du fichier qui contient touts les fichiers
+#define FILENAME "transfer"
+
+// Regroupe les informations d'un client dans une structure
+// Cette structure est utilisée pour la liste des clients
+struct Client {
+    int dSC;
+    char pseudo[MAX_PSEUDO];
+    pthread_t thread;
+    int threadEnd;
+} extern clientList[MAX_CLIENT];
+
 // Liste des descripteurs de socket des clients
 extern int dSCList[MAX_CLIENT];
 

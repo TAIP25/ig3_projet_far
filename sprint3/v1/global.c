@@ -7,6 +7,8 @@
 
 #include "global.h"
 
+struct Client clientList[MAX_CLIENT];
+
 // Liste des descripteurs de socket des clients
 int dSCList[MAX_CLIENT];
 

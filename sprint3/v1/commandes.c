@@ -378,3 +378,39 @@ void sendRename(char* pseudo, int dSC){
         }
     }
 }
+
+
+// Appelé quand le client envoie la commande "sudo file"
+
+/*
+void sendFile(int dSC, char* fileName){
+    if(isConnected(dSC) == 0){
+        perror("Erreur le client n'est pas connecté");
+        exit(0);
+    }
+    // On vérifie que le fichier existe
+    FILE* file = fopen(fileName, "r");
+    if(file == NULL){
+        perror("Erreur le fichier n'existe pas");
+        exit(0);
+    }
+    fclose(file);
+
+    // On envoie le nom du fichier au client
+    if(send(dSC, fileName, MAX_CHAR, 0) == -1){
+        perror("Erreur lors de l'envoie du message");
+        exit(0);
+    }
+
+    // On envoie le fichier au client
+    char buffer[MAX_CHAR];
+    file = fopen(fileName, "r");
+    while(fgets(buffer, MAX_CHAR, file) != NULL){
+        if(send(dSC, buffer, MAX_CHAR, 0) == -1){
+            perror("Erreur lors de l'envoie du message");
+            exit(0);
+        }
+    }
+    fclose(file);
+}
+*/

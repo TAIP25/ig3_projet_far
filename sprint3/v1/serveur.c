@@ -7,7 +7,6 @@
 #include <semaphore.h>
 #include <unistd.h>
 #include <signal.h>
-
 #include "global.h"
 #include "commandes.h"
 
@@ -219,6 +218,11 @@ void * clientReceive(void* arg){
             else if(strncmp(commande, "rename", 6) == 0){
                 // Change le pseudo du client
                 sendRename(arg, getDSC(i));
+            }
+            // Vérifie si la commande est "sudo file"
+            else if(strncmp(commande, "file", 4) == 0){
+                // Envoie un message au client pour lui demander le nom du fichier
+                sendFile(getDSC(i));
             }
             else{
                 // Avertis le client que la commande n'existe pas

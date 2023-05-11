@@ -24,21 +24,21 @@
 // Regroupe les informations d'un client dans une structure
 // Cette structure est utilisée pour la liste des clients
 struct Client {
-    int dSC;
+    struct Connection {
+        // Descripteur de socket du client
+        int dSC;
+        // Adresse du client
+        struct sockaddr_in clientAddr;
+        // Taille de l'adresse du client
+        socklen_t clientAddrLen;
+    } connection;
+    // Pseudo du client
     char pseudo[MAX_PSEUDO];
+    // Thread du client
     pthread_t thread;
+    // Booléen indiquant si le thread doit être nettoyé
     int threadEnd;
 } extern clientList[MAX_CLIENT];
-
-// Liste des descripteurs de socket des clients
-extern int dSCList[MAX_CLIENT];
-
-// Création de thread pour les clients
-// pthread_t est un type de donnée qui représente un thread
-extern pthread_t threadC[MAX_CLIENT];
-
-// Création de pseudo pour les clients
-extern char pseudoList[MAX_CLIENT][MAX_PSEUDO];
 
 // Création d'un mutex pour les variables partagées
 // Il n'y a qu'un seul mutex car toutes les variables partagées étroitement liées
@@ -46,9 +46,6 @@ extern pthread_mutex_t mutex;
 
 // Création d'un sémaphore indiquant le nombre de places restantes sur le serveur
 extern sem_t semaphoreSlot;
-
-// Création d'une liste de booléen pour savoir si un thread doit être terminé
-extern int threadEnd[MAX_CLIENT];
 
 // Création d'un sémaphore indiquant le nombre de threads à nettoyer
 extern sem_t semaphoreMemory;

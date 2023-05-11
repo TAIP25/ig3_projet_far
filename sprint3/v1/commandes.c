@@ -13,7 +13,7 @@
 int isConnected(int dSC){
     pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
-        if(dSCList[i] == dSC){
+        if(clientList[i].connection.dSC == dSC){
             pthread_mutex_unlock(&mutex);
             return 1;
         }
@@ -30,7 +30,7 @@ int isConnected(int dSC){
 int getDSC(int id){
     // Overkill mais mieux si il y a un scale up
     pthread_mutex_lock(&mutex);
-    int dSC = dSCList[id];
+    int dSC = clientList[id].connection.dSC;
     pthread_mutex_unlock(&mutex);
     if(isConnected(dSC)){
         return dSC;
@@ -49,7 +49,7 @@ int getDSC(int id){
 int getID(int dSC){
     pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
-        if(dSCList[i] == dSC){
+        if(clientList[i].connection.dSC == dSC){
             pthread_mutex_unlock(&mutex);
             return i;
         }
@@ -70,7 +70,7 @@ char* getPseudoByDSC(int dSC){
     }
     int id = getID(dSC);
     pthread_mutex_lock(&mutex);
-    char * pseudo = pseudoList[id];
+    char * pseudo = clientList[id].pseudo;
     pthread_mutex_unlock(&mutex);
     return pseudo;
 }
@@ -82,7 +82,7 @@ char* getPseudoByDSC(int dSC){
 int getDSCByPseudo(char* pseudo){
     pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
-        if(strcmp(pseudoList[i], pseudo) == 0){
+        if(strcmp(clientList[i].pseudo, pseudo) == 0){
             pthread_mutex_unlock(&mutex);
             return i;
         }
@@ -106,7 +106,7 @@ void sendAll(char* msg, int dSC){
     strcat(infoMsg, msg);
     pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
-        if(dSCList[i] != dSC && dSCList[i] != -1){
+        if(isConnected(clientList[i].connection.dSC) && clientList[i].connection.dSC != dSC){
             
             // Envoie un message au client i
             // int send(int dSC, void *msg, int lg, int flags)
@@ -115,7 +115,7 @@ void sendAll(char* msg, int dSC){
             // &recvR = message envoyé
             // sizeof(int) = taille du message (ici 4)
             // 0 = flags
-            if(send(dSCList[i], infoMsg, MAX_CHAR, 0) == -1){
+            if(send(getDSC(i), infoMsg, MAX_CHAR, 0) == -1){
                 perror("Erreur lors de l'envoie du message");
                 exit(0);
             }
@@ -165,7 +165,10 @@ void sendHelp(int dSC){
     char line[MAX_CHAR];
     while(fgets(line, sizeof(line), f)){
         line[strlen(line)-1] = '\0';
-        if(send(dSC, line, sizeof(line), 0) == -1){
+        char finalLine[MAX_CHAR];
+        strcpy(finalLine, "\033[36m[INFO]\033[0m ");
+        strcat(finalLine, line);
+        if(send(dSC, finalLine, sizeof(finalLine), 0) == -1){
             perror("Erreur lors de l'envoie du message");
             exit(0);
         }
@@ -209,8 +212,8 @@ void sendQuit(int dSC){
 
     // Informe le threadMemory qu'il peut supprimer le thread
     pthread_mutex_lock(&mutex);
-    printf("\033[36m[INFO]\033[0m Le client %s s'est déconnecté\n", pseudoList[id]);
-    threadEnd[id] = 1;
+    printf("\033[36m[INFO]\033[0m Le client %s s'est déconnecté\n", clientList[id].pseudo);
+    clientList[id].threadEnd = 1;
     pthread_mutex_unlock(&mutex);
 
     // Incrémente le nombre de thread à nettoyer
@@ -229,7 +232,7 @@ void sendList(int dSC){
     char list[MAX_CHAR*MAX_CLIENT/10] = "\033[36m[INFO]\033[0m Liste des clients connectés :\n";
     pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
-        if(dSCList[i] != -1){
+        if(isConnected(clientList[i].connection.dSC)){
             
             // Permet de si MAX_CHAR change de valeur il n'y ai pas de problème
 
@@ -242,10 +245,10 @@ void sendList(int dSC){
             // ... = variable à écrire dans la chaine de caractère
             int nId = snprintf(NULL, 0, "%d", i);
             char id[nId+1];
-            int nPseudo = snprintf(NULL, 0, "%s", pseudoList[i]);
+            int nPseudo = snprintf(NULL, 0, "%s", clientList[i].pseudo);
             char pseudo[nPseudo+1];
             snprintf(id, nId+1, "%d", i);
-            snprintf(pseudo, nPseudo+1, "%s", pseudoList[i]);
+            snprintf(pseudo, nPseudo+1, "%s", clientList[i].pseudo);
 
             // Ajoute l'id à la liste
             // char *strcat(char *dest, const char *src)
@@ -285,7 +288,7 @@ void sendKick(int idS, int idR){
     char kick[MAX_CHAR] = "\033[36m[INFO]\033[0m Vous avez été kick du serveur par ";
     
     pthread_mutex_lock(&mutex);
-    strcat(kick, pseudoList[idS]);
+    strcat(kick, clientList[idS].pseudo);
     pthread_mutex_unlock(&mutex);
 
     if(send(getDSC(idR), kick, MAX_CHAR, 0) == -1){
@@ -308,8 +311,8 @@ void sendKick(int idS, int idR){
 
     // Informe le threadMemory qu'il peut supprimer le thread
     pthread_mutex_lock(&mutex);
-    printf("\033[36m[INFO]\033[0m Le client %s s'est fait kick\n", pseudoList[idR]);
-    threadEnd[idR] = 1;
+    printf("\033[36m[INFO]\033[0m Le client %s s'est fait kick\n", clientList[idR].pseudo);
+    clientList[idR].threadEnd = 1;
     pthread_mutex_unlock(&mutex);
 
     // Incrémente le nombre de thread à nettoyer
@@ -328,7 +331,7 @@ int properPseudo(char* pseudo){
         return 0;
     }
     for(int i = 0; i < MAX_CLIENT; i++){
-        if(strcmp(pseudo, pseudoList[i]) == 0){
+        if(strcmp(pseudo, clientList[i].pseudo) == 0){
             return 0;
         }
     }
@@ -355,11 +358,11 @@ void sendRename(char* pseudo, int dSC){
     if(properPseudo(pseudo) == 1){
         int id = getID(dSC);
         pthread_mutex_lock(&mutex);
-        printf("\033[36m[INFO]\033[0m Le client %s a changé son pseudo en %s\n", pseudoList[id], pseudo);
+        printf("\033[36m[INFO]\033[0m Le client %s a changé son pseudo en %s\n", clientList[id].pseudo, pseudo);
         pthread_mutex_unlock(&mutex);
         
         pthread_mutex_lock(&mutex);
-        strcpy(pseudoList[id], pseudo);
+        strcpy(clientList[id].pseudo, pseudo);
         pthread_mutex_unlock(&mutex);
 
         char rename[MAX_CHAR] = "\033[36m[INFO]\033[0m Votre pseudo a été changé en ";

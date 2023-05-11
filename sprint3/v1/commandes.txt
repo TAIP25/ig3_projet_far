@@ -1,16 +1,9 @@
-\033[36m[INFO]\033[0m Liste des commandes disponibles :
-\033[36m[INFO]\033[0m sudo help : affiche la liste des commandes disponibles
-\033[36m[INFO]\033[0m sudo all <msg> : envoie un message à tous les clients connectés (par défaut)
-\033[36m[INFO]\033[0m sudo mp <pseudo> <msg> : envoie un message privé au client <pseudo>
-\033[36m[INFO]\033[0m sudo quit : déconnecte le client du serveur
-\033[36m[INFO]\033[0m sudo list : affiche la liste des clients connectés (id : pseudo)
-\033[36m[INFO]\033[0m sudo kick <pseudo> : déconnecte le client <pseudo> du serveur
-\033[36m[INFO]\033[0m sudo send : Liste les fichiers disponibles et choisissez-en un à envoyer
-\033[36m[INFO]\033[0m sudo get <file> : récupère le fichier <file> du serveur 
-sudo send claud.txt
-si le fichier existe, cat 
-sinon, le fichier n'existe pas réessayez
-Choisissez le fichier à envoyer:
-1. claude.txt
-2. jean.txt
-1 ou 2
+Liste des commandes disponibles :
+sudo help : affiche la liste des commandes disponibles
+sudo all <msg> : envoie un message à tous les clients connectés (par défaut)
+sudo mp <pseudo> <msg> : envoie un message privé au client <pseudo>
+sudo quit : déconnecte le client du serveur
+sudo list : affiche la liste des clients connectés (id : pseudo)
+sudo kick <pseudo> : déconnecte le client <pseudo> du serveur
+sudo send : Liste les fichiers disponibles et choisissez-en un à envoyer
+sudo get <file> : récupère le fichier <file> du serveur 

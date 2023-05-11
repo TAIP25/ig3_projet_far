@@ -10,41 +10,34 @@
 #include "global.h"
 #include "commandes.h"
 
-// Création d'un tableau statique d'addresse de socket
-// aC = adresse du client
-struct sockaddr_in aC[MAX_CLIENT];
-
-// Stocke la taille de la structure aC dans lg
-socklen_t lg[MAX_CLIENT];
-
 // Descripteur de socket du serveur
 int dS; 
 
 // Initialise la liste des descripteurs de socket des clients à -1
 void initDSCList(){
     for(int i = 0; i < MAX_CLIENT; i++){
-        dSCList[i] = -1;
+        clientList[i].connection.dSC = -1;
     }
 }
 
 // Initialise les pseudos des clients à l'id du client
 void initPseudoList(){
     for(int i = 0; i < MAX_CLIENT; i++){
-        sprintf(pseudoList[i], "Client%d", i);
+        sprintf(clientList[i].pseudo, "Client%d", i);
     }
 }
 
 // Initialise la liste de structure d'adresse de socket
 void initAC(){
     for(int i = 0; i < MAX_CLIENT; i++){
-        lg[i] = sizeof(aC[i]);
+        clientList[i].connection.clientAddrLen = sizeof(clientList[i].connection.clientAddr);
     }
 }
 
 // Initialise la liste de booléen à 0
 void initThreadEnd(){
     for(int i = 0; i < MAX_CLIENT; i++){
-        threadEnd[i] = 0;
+        clientList[i].threadEnd = 0;
     }
 }
 
@@ -100,8 +93,9 @@ void * clientReceive(void* arg){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
-
-    while (!threadEnd[i]) {
+    
+    //TODO mutex
+    while (!clientList[i].threadEnd) {
 
         // Reçoit un message du client i
         // int recv(int dSC, void *msg, int lg, int flags)
@@ -110,7 +104,7 @@ void * clientReceive(void* arg){
         // msg = message reçu
         // sizeof(msg) = taille du message
         // 0 = flags
-        int recvC = recv(dSCList[i], msg, sizeof(msg), 0);
+        int recvC = recv(getDSC(i), msg, sizeof(msg), 0);
 
         // Vérifie si la connexion est interrompu ou si une erreur est survenue
         if(recvC == 0 ){
@@ -222,11 +216,13 @@ void * clientReceive(void* arg){
             // Vérifie si la commande est "sudo file"
             else if(strncmp(commande, "file", 4) == 0){
                 // Envoie un message au client pour lui demander le nom du fichier
-                sendFile(getDSC(i));
+                //sendFile(getDSC(i));
+                char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m Commende en court de construction";
+                send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0);
             }
             else{
                 // Avertis le client que la commande n'existe pas
-                char* errorMsg = "\033[41m[ERROR]\033[0m Commande inconnue, tapez \"sudo help\" pour afficher la liste des commandes";
+                char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m Commande inconnue, tapez \"sudo help\" pour afficher la liste des commandes";
                 send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0);
             }
         }
@@ -253,24 +249,24 @@ void * threadMemory(){
         sem_wait(&semaphoreMemory);
         pthread_mutex_lock(&mutex);
         for(int i = 0; i < MAX_CLIENT; i++){
-            if(threadEnd[i] == 1){
+            if(clientList[i].threadEnd == 1){
                 
                 // Rend le descripteur de socket disponible
-                dSCList[i] = -1;
+                clientList[i].connection.dSC = -1;
 
                 // Réinitialise le pseudo du client
-                sprintf(pseudoList[i], "Client%d", i);
+                sprintf(clientList[i].pseudo, "Client%d", i);
 
                 // Ferme le thread
                 // int pthread_cancel(pthread_t thread);
                 // Renvoie 0 si le thread est fermé, sinon renvoie une erreur
                 // thread = identifiant du thread à fermer
-                if(pthread_cancel(threadC[i]) != 0){
+                if(pthread_cancel(clientList[i].thread) != 0){
                     perror("Erreur fermeture thread\n");
                     exit(0);
                 }
 
-                threadEnd[i] = 0;
+                clientList[i].threadEnd = 0;
 
                 // Incrémente le nombre de place disponible dans le semaphore
                 sem_post(&semaphoreSlot);
@@ -408,20 +404,20 @@ int main(int argc, char *argv[]) {
         }
 
         for(int i = 0; i < MAX_CLIENT; i++){
-            if(dSCList[i] == -1){
+            if(clientList[i].connection.dSC == -1){
                 // Accepte la connexion du client
                 // int accept(int dS, struct sockaddr *aC, socklen_t *lg)
                 // Renvoie le descripteur de socket du client
                 // dS = descripteur de socket
                 // &aC = adresse du client
                 // &lg = l'adresse de la taille de la structure aC
-                if((dSCList[i] = accept(dS, (struct sockaddr*) &aC[i], &lg[i])) == -1){
+                if((clientList[i].connection.dSC = accept(dS, (struct sockaddr*) &clientList[i].connection.clientAddr, &clientList[i].connection.clientAddrLen)) == -1){
                     perror("accept");
                     exit(0);
                 }
 
                 pthread_mutex_lock(&mutex);
-                pthread_create(&threadC[i], NULL, clientReceive, (void *) (long) i);
+                pthread_create(&clientList[i].thread, NULL, clientReceive, (void *) (long) i);
                 pthread_mutex_unlock(&mutex);
             }
         }

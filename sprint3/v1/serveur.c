@@ -50,7 +50,7 @@ void * clientReceive(void* arg){
 
     char msg[MAX_CHAR];
 
-    char msgWait[MAX_CHAR] = "\033[36m[INFO]\033[0m Vous êtes sorti de la file d'attente, bienvenue sur le serveur";
+    char msgWait[MAX_CHAR] = "\033[36m[INFO]\033[0m Vous êtes sorti de la file d'attente, bienvenue sur le serveur\0";
 
     if(send(getDSC(i), msgWait, strlen(msgWait) + 1, 0) == -1){
         perror("Erreur lors de l'envoie du message");
@@ -59,8 +59,7 @@ void * clientReceive(void* arg){
 
     printf("\033[36m[INFO]\033[0m Un client s'est connecté\n");
 
-    char msgPseudo[MAX_CHAR] = "\033[33m[NEED]\033[0m Veuillez entrer votre pseudo: ";
-    msgPseudo[strlen(msgPseudo) - 1] = '\0';
+    char msgPseudo[MAX_CHAR] = "\033[33m[NEED]\033[0m Veuillez entrer votre pseudo: \0";
     
     if(send(getDSC(i), msgPseudo, strlen(msgPseudo) + 1, 0) == -1){
         perror("Erreur lors de l'envoie du message");

@@ -10,16 +10,23 @@
 // Vérifie si le client est connecté
 // pre:
 // post: isConnected(dSC) == 1 || isConnected(dSC) == 0
+// post: isConnected(-1) == 0
 int isConnected(int dSC){
     pthread_mutex_lock(&mutex);
-    for(int i = 0; i < MAX_CLIENT; i++){
-        if(clientList[i].connection.dSC == dSC){
-            pthread_mutex_unlock(&mutex);
-            return 1;
-        }
+    if(dSC == -1){
+        pthread_mutex_unlock(&mutex);
+        return 0;
     }
-    pthread_mutex_unlock(&mutex);
-    return 0;
+    else{
+        for(int i = 0; i < MAX_CLIENT; i++){
+            if(clientList[i].connection.dSC == dSC){
+                pthread_mutex_unlock(&mutex);
+                return 1;
+            }
+        }
+        pthread_mutex_unlock(&mutex);
+        return 0;
+    }
 }
 
 // Recupère la dSC du client à partir de son id
@@ -104,9 +111,13 @@ void sendAll(char* msg, int dSC){
     
     char infoMsg[MAX_CHAR] = "\033[31m[BROADCAST]\033[0m ";
     strcat(infoMsg, msg);
-    pthread_mutex_lock(&mutex);
+
     for(int i = 0; i < MAX_CLIENT; i++){
-        if(isConnected(clientList[i].connection.dSC) && clientList[i].connection.dSC != dSC){
+        pthread_mutex_lock(&mutex);
+        int dSCLoop = clientList[i].connection.dSC;
+        pthread_mutex_unlock(&mutex);
+        
+        if(isConnected(dSCLoop) && dSCLoop != dSC){
             
             // Envoie un message au client i
             // int send(int dSC, void *msg, int lg, int flags)
@@ -115,13 +126,12 @@ void sendAll(char* msg, int dSC){
             // &recvR = message envoyé
             // sizeof(int) = taille du message (ici 4)
             // 0 = flags
-            if(send(getDSC(i), infoMsg, MAX_CHAR, 0) == -1){
-                perror("Erreur lors de l'envoie du message");
+            if(send(dSCLoop, infoMsg, MAX_CHAR, 0) == -1){
+                perror("Erreur lors de l'envoie du message B");
                 exit(0);
             }
         }
     }
-    pthread_mutex_unlock(&mutex);
 }
 
 // Appelé quand le client envoie la commande "sudo mp <id> <msg>"
@@ -230,10 +240,9 @@ void sendList(int dSC){
         exit(0);
     }
     char list[MAX_CHAR*MAX_CLIENT/10] = "\033[36m[INFO]\033[0m Liste des clients connectés :\n";
-    pthread_mutex_lock(&mutex);
+    
     for(int i = 0; i < MAX_CLIENT; i++){
         if(isConnected(clientList[i].connection.dSC)){
-            
             // Permet de si MAX_CHAR change de valeur il n'y ai pas de problème
 
             // Converti l'id en char*
@@ -245,10 +254,17 @@ void sendList(int dSC){
             // ... = variable à écrire dans la chaine de caractère
             int nId = snprintf(NULL, 0, "%d", i);
             char id[nId+1];
+            
+            pthread_mutex_lock(&mutex);
             int nPseudo = snprintf(NULL, 0, "%s", clientList[i].pseudo);
+            pthread_mutex_unlock(&mutex);
+
             char pseudo[nPseudo+1];
             snprintf(id, nId+1, "%d", i);
+            
+            pthread_mutex_lock(&mutex);
             snprintf(pseudo, nPseudo+1, "%s", clientList[i].pseudo);
+            pthread_mutex_unlock(&mutex);
 
             // Ajoute l'id à la liste
             // char *strcat(char *dest, const char *src)
@@ -262,7 +278,6 @@ void sendList(int dSC){
             strcat(list, "\n");
         }
     }
-    pthread_mutex_unlock(&mutex);
 
     // Supprime le dernier \n
     list[strlen(list)-1] = '\0';
@@ -357,16 +372,28 @@ void sendRename(char* pseudo, int dSC){
     // On vérifie aussi que le pseudo ne contient pas de caractère interdit d'espace, de retour à la ligne etc ...
     if(properPseudo(pseudo) == 1){
         int id = getID(dSC);
+        // Si c'est la première fois que le client change son pseudo
+        int firstTime = 0;
         pthread_mutex_lock(&mutex);
-        printf("\033[36m[INFO]\033[0m Le client %s a changé son pseudo en %s\n", clientList[id].pseudo, pseudo);
+        // Si le début du pseudo est "Client", alors on considère que c'est la première fois que le client change son pseudo
+        if(strncmp(clientList[id].pseudo, "Client", 6) == 0){
+            printf("\033[36m[INFO]\033[0m Le client s'est connecté avec le pseudo %s\n", clientList[id].pseudo);
+            firstTime = 1;
+        }
+        else{
+            printf("\033[36m[INFO]\033[0m Le client %s a changé son pseudo en %s\n", clientList[id].pseudo, pseudo);
+        } 
         pthread_mutex_unlock(&mutex);
         
         pthread_mutex_lock(&mutex);
         strcpy(clientList[id].pseudo, pseudo);
         pthread_mutex_unlock(&mutex);
-
         char rename[MAX_CHAR] = "\033[36m[INFO]\033[0m Votre pseudo a été changé en ";
+        if(firstTime == 1){
+            strcpy(rename, "\033[36m[INFO]\033[0m Vous êtes connecté avec le pseudo ");
+        }
         strcat(rename, pseudo);
+
 
         if(send(dSC, rename, MAX_CHAR, 0) == -1){
             perror("Erreur lors de l'envoie du message");

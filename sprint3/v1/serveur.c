@@ -11,7 +11,8 @@
 #include "commandes.h"
 
 // Descripteur de socket du serveur
-int dS; 
+int dSClient;
+int dSFile;
 
 // Initialise la liste des descripteurs de socket des clients à -1
 void initDSCList(){
@@ -276,6 +277,26 @@ void * threadMemory(){
     pthread_exit(0);
 }
 
+// Fonction permettant de gérer entrée des fichiers
+void * threadFile(){
+    while(1){
+        struct sockaddr_in adresseClient;
+        socklen_t longueurAdresseClient = sizeof(adresseClient);
+        int dSFileClient;
+        if(dSFileClient = accept(dSFile, (struct sockaddr *)&adresseClient, &longueurAdresseClient)){
+            perror("Erreur accept\n");
+            exit(0);
+        }
+        char file[MAX_CHAR];
+        int recvFile;
+        if(recvFile = recv(dSFileClient, file, MAX_CHAR, 0) == -1){
+            perror("Erreur recv\n");
+            exit(0);
+        }
+    }
+    pthread_exit(0);
+}
+
 // Fonction de gestion des signaux
 void sigint_handler(int sig) {
 
@@ -286,7 +307,15 @@ void sigint_handler(int sig) {
     // Renvoie 0 si la fermeture est réussi et -1 si elle échoue
     // dS = descripteur de socket
     // 2 = fermeture de la connexion
-    shutdown(dS, 2);
+    if(shutdown(dSClient, 2) == -1){
+        perror("Erreur fermeture connexion\n");
+        exit(0);
+    }
+
+    if(shutdown(dSFile, 2) == -1){
+        perror("Erreur fermeture connexion\n");
+        exit(0);
+    }
 
     exit(0);
 }
@@ -333,24 +362,29 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-
+    // TODO: Faire une troisième adresse (1 client, 1 file upload, 1 file download)
     // Création de la structure aS
     // aS = adresse du serveur
-    struct sockaddr_in aS;
+    struct sockaddr_in aSClient;
+    struct sockaddr_in aSFile;
+    
 
     // Stocke la famille d'adresse dans la structure aS
     // AF_INET = Protocole IP
-    aS.sin_family = AF_INET;
+    aSClient.sin_family = AF_INET;
+    aSFile.sin_family = AF_INET;
 
     // Converti l'adresse IP en format réseau
     // INADDR_ANY = adresse IP de la machine
-    aS.sin_addr.s_addr = INADDR_ANY ;
+    aSClient.sin_addr.s_addr = INADDR_ANY;
+    aSFile.sin_addr.s_addr = INADDR_ANY;
 
     // Converti le port en format réseau
     // unsigned short htons(unsigned short hostshort)
     // Renvoie le port en format réseau en cas de succès et 0 en cas d'échec
     // argv[1] = port du serveur
-    aS.sin_port = htons(atoi(argv[1])) ;
+    aSClient.sin_port = htons(atoi(argv[1]));
+    aSFile.sin_port = htons(atoi(argv[1]) + 1);
 
     // Création du socket pour les clients
     // int socket(int domaine, int type, int protocole)
@@ -359,7 +393,15 @@ int main(int argc, char *argv[]) {
     // PF_INET = Protocole IP
     // SOCK_STREAM = Protocole TCP
     // 0 = Protocole par défaut
-    dS = socket(PF_INET, SOCK_STREAM, 0);
+    if(dSClient = socket(PF_INET, SOCK_STREAM, 0) == -1){
+        perror("Erreur création socket\n");
+        exit(0);
+    }
+    
+    if(dSFile = socket(PF_INET, SOCK_STREAM, 0) == -1){
+        perror("Erreur création socket\n");
+        exit(0);
+    }
     
     // Le socket est créé 
 
@@ -369,7 +411,15 @@ int main(int argc, char *argv[]) {
     // dS1 = descripteur de socket
     // &aS = adresse du serveur
     // sizeof(aS) = taille de la structure aS
-    bind(dS, (struct sockaddr*)&aS, sizeof(aS));
+    if(bind(dSClient, (struct sockaddr*)&aSClient, sizeof(aSClient)) == -1){
+        perror("Erreur liaison socket\n");
+        exit(0);
+    }
+
+    if(bind(dSFile, (struct sockaddr*)&aSFile, sizeof(aSFile)) == -1){
+        perror("Erreur liaison socket\n");
+        exit(0);
+    }
 
     // Le socket est nommé
 
@@ -378,12 +428,30 @@ int main(int argc, char *argv[]) {
     // Renvoie 0 si la mise en écoute est réussi et -1 si elle échoue
     // dS = descripteur de socket
     // nbC = nombre de connexion en attente
-    listen(dS, 2);
+    if(listen(dSClient, 10) == -1){
+        perror("Erreur mise en écoute\n");
+        exit(0);
+    }
+
+    if(listen(dSFile, 10) == -1){
+        perror("Erreur mise en écoute\n");
+        exit(0);
+    }
 
 
     // Création du thread pour la gestion de la mémoire partagée pour les autres threads
     pthread_t threadClean;
-    pthread_create(&threadClean, NULL, threadMemory, NULL);
+
+    // int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine) (void *), void *arg);
+    // Renvoie 0 en cas de succès et -1 en cas d'échec
+    // thread = pointeur sur le thread
+    // attr = pointeur sur les attributs du thread
+    // start_routine = pointeur sur la fonction à exécuter par le thread
+    // arg = pointeur sur les arguments de la fonction
+    if(pthread_create(&threadClean, NULL, threadMemory, NULL) == -1){
+        perror("Erreur lors de la création du thread\n");
+        exit(0);
+    }
 
     // Gestion des clients
     // Dès qu'un client se connecte, un thread est créé pour gérer la connexion
@@ -410,14 +478,31 @@ int main(int argc, char *argv[]) {
                 // dS = descripteur de socket
                 // &aC = adresse du client
                 // &lg = l'adresse de la taille de la structure aC
-                if((clientList[i].connection.dSC = accept(dS, (struct sockaddr*) &clientList[i].connection.clientAddr, &clientList[i].connection.clientAddrLen)) == -1){
+                if((clientList[i].connection.dSC = accept(dSClient, (struct sockaddr*) &clientList[i].connection.clientAddr, &clientList[i].connection.clientAddrLen)) == -1){
                     perror("accept");
                     exit(0);
                 }
 
-                pthread_mutex_lock(&mutex);
-                pthread_create(&clientList[i].thread, NULL, clientReceive, (void *) (long) i);
-                pthread_mutex_unlock(&mutex);
+                // int pthread_mutex_lock(pthread_mutex_t *mutex);
+                // Renvoie 0 en cas de succès et -1 en cas d'échec
+                // mutex = pointeur sur le mutex
+                if(pthread_mutex_lock(&mutex) == -1){
+                    perror("Erreur lors du verrouillage du mutex\n");
+                    exit(0);
+                }
+
+                if(pthread_create(&clientList[i].thread, NULL, clientReceive, (void *) (long) i) == -1){
+                    perror("Erreur lors de la création du thread\n");
+                    exit(0);
+                }
+
+                // int pthread_mutex_unlock(pthread_mutex_t *mutex);
+                // Renvoie 0 en cas de succès et -1 en cas d'échec
+                // mutex = pointeur sur le mutex
+                if(pthread_mutex_unlock(&mutex) == -1){
+                    perror("Erreur lors du déverrouillage du mutex\n");
+                    exit(0);
+                }
             }
         }
     }
@@ -427,7 +512,14 @@ int main(int argc, char *argv[]) {
     // Renvoie 0 si la fermeture est réussi et -1 si elle échoue
     // dS1 = descripteur de socket
     // 2 = fermeture de la connexion
-    shutdown(dS, 2);
+    if(shutdown(dSClient, 2) == -1){
+        perror("Erreur lors de la fermeture de la connexion\n");
+        exit(0);
+    }
+    if(shutdown(dSFile, 2) == -1){
+        perror("Erreur lors de la fermeture de la connexion\n");
+        exit(0);
+    }
 
     printf("\033[36m[INFO]\033[0m Le serveur est fermé\n");
 

@@ -10,6 +10,45 @@
 #include "commandes.h"
 
 int client_socket;
+int upload_socket;
+int download_socket;
+struct sockaddr_in upload_address;
+struct sockaddr_in download_address;
+
+void * uploadFile(void * filename) {
+    //connect au serveur avec descripteur upload
+    int connection = connect(upload_socket, (struct sockaddr*) &upload_address, sizeof(upload_address));
+    if (connection == -1) {
+        perror("Erreur lors de la connexion pour upload");
+        exit(0);
+    }
+
+    // Assuming 'filename' holds the name of the file to be displayed
+    FILE* file = fopen((char*)filename, "r");
+    if (file != NULL) {
+        // File exists, read and display its contents using 'cat' command
+        char lines[MAX_CHAR] = {0};
+        while (fgets(lines, sizeof(lines), file) != NULL) {
+            // Envoie le message au serveur
+            // int send(int dS, const void *m, size_t lg, int flags)
+            // Renvoie le nombre d'octet envoyé si la connexion est réussi et -1 si elle échoue
+            // dS = descripteur de socket
+            // m = message
+            // strlen(m) + 1 = taille du message
+            // 0 = protocole par défaut
+            send(upload_socket, lines, strlen(lines) + 1 , 0);
+        }
+    } else {
+        // File does not exist
+        printf("\033[41m[ERROR]\033[0m Erreur fichier introuvable\n");
+    }
+
+    if (close(upload_socket) == -1) {
+        perror("Erreur lors de la fermeture de la socket");
+    }
+
+    pthread_exit(0);
+}
 
 void * messageReceive() {
 
@@ -60,27 +99,9 @@ void * messageSend() {
                 }
 
                 pthread_t threadUpload;
-                pthread_create(&threadUpload, NULL, upload, filename);
+                pthread_create(&threadUpload, NULL, uploadFile, filename);
 
-                // Assuming 'filename' holds the name of the file to be displayed
-                FILE* file = fopen(filename, "r");
-            }
-
-            //l'utilisateur veut envoyer un fichier
-            if (strncmp(message, "sudo file", 9) == 0) {
-                // Assuming 'filename' holds the name of the file to be displayed
-                FILE* file = fopen(filename, "r");
-                if (file != NULL) {
-                    // File exists, read and display its contents using 'cat' command
-                    char ch;
-                    while ((ch = fgetc(file)) != EOF) { //EOF = end of file
-                        putchar(ch); //outputs a single character at a time
-                    }
-                    fclose(file);
-                } else {
-                    // File does not exist
-                    printf("The file does not exist.\n");
-                }
+                
             }
             else {
 
@@ -92,6 +113,7 @@ void * messageSend() {
             // strlen(m) + 1 = taille du message
             // 0 = protocole par défaut
             send(client_socket, message, strlen(message) + 1 , 0);
+            }
         }
     }
 }
@@ -108,7 +130,7 @@ void sigint_handler(int sig) {
         perror("Erreur lors de l'envoi du message");
     }
 
-    if(close(client_socket) == -1){
+    if(close(client_socket) == -1 && close(upload_socket) == -1 && close(download_socket) == -1){
         perror("Erreur lors de la fermeture de la socket");
     }
 
@@ -136,9 +158,11 @@ int main(int argc, char *argv[]) {
     // SOCK_STREAM = Protocole TCP
     // 0 = Protocole par défaut
     client_socket = socket(AF_INET, SOCK_STREAM, 0);
+    upload_socket = socket(AF_INET, SOCK_STREAM, 0);
+    download_socket = socket(AF_INET, SOCK_STREAM, 0);
 
     // Gestion d'erreur
-    if (client_socket == -1) {
+    if (client_socket == -1 || upload_socket == -1 || download_socket == -1) {
         perror("Erreur de création de socket client");
         exit(0);
     }
@@ -153,6 +177,8 @@ int main(int argc, char *argv[]) {
     // Stock la famille d'adresse dans la structure aS
     // AF_INET = Protocole IP
     server_address.sin_family = AF_INET;
+    upload_address.sin_family = AF_INET;
+    download_address.sin_family = AF_INET;
 
     // Converti l'adresse IP en format réseau
     // inet_pton(int af, const char *src, void *dst)
@@ -161,6 +187,8 @@ int main(int argc, char *argv[]) {
     // argv[1] = adresse IP du serveur
     // server_adress.sin_addr = adresse du serveur
     inet_pton(AF_INET,argv[1],&(server_address.sin_addr));
+    inet_pton(AF_INET,argv[1],&(upload_address.sin_addr));
+    inet_pton(AF_INET,argv[1],&(download_address.sin_addr));
 
     // Converti le port en format réseau
     // unsigned short htons(unsigned short hostshort)
@@ -168,6 +196,8 @@ int main(int argc, char *argv[]) {
     // Renvoie le port en format réseau en cas de succès et 0 en cas d'échec
     // argv[2] = port du serveur
     server_address.sin_port = htons(atoi(argv[2]));
+    upload_address.sin_port = htons(atoi(argv[2]+1));
+    download_address.sin_port = htons(atoi(argv[2]+2));
 
     // Connecte la socket au serveur
     // connect(int dS, struct sockaddr *aS, socklen_t lgA)
@@ -185,6 +215,7 @@ int main(int argc, char *argv[]) {
 
     //gestion de signaux
     signal(SIGINT, sigint_handler);
+
 
     // Cast en long pour éviter un warning
     pthread_t threadReceive;

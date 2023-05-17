@@ -46,6 +46,44 @@ void * messageSend() {
             printf("\033[41m[ERROR]\033[0m Erreur message trop grand\n");
         }
         else{
+
+            //sudo upload
+            if (strncmp(message, "sudo upload", 11) == 0) {
+                //affiche la liste des fichiers qu'il y a dans le dossier transferClient
+                printf("\033[36m[INFO]\033[0m Liste des fichiers dans le dossier transferClient:\n");
+                system("ls transferClient"); //ls = liste les fichiers du dossier
+                printf("\033[36m[INFO]\033[0m Veuillez entrer le nom du fichier à envoyer:\n");
+                char filename[MAX_CHAR] = {0};
+                fgets(filename, MAX_CHAR, stdin);
+                if(filename[strlen(filename) - 1] == '\n'){
+                    filename[strlen(filename) - 1] = '\0';
+                }
+
+                pthread_t threadUpload;
+                pthread_create(&threadUpload, NULL, upload, filename);
+
+                // Assuming 'filename' holds the name of the file to be displayed
+                FILE* file = fopen(filename, "r");
+            }
+
+            //l'utilisateur veut envoyer un fichier
+            if (strncmp(message, "sudo file", 9) == 0) {
+                // Assuming 'filename' holds the name of the file to be displayed
+                FILE* file = fopen(filename, "r");
+                if (file != NULL) {
+                    // File exists, read and display its contents using 'cat' command
+                    char ch;
+                    while ((ch = fgetc(file)) != EOF) { //EOF = end of file
+                        putchar(ch); //outputs a single character at a time
+                    }
+                    fclose(file);
+                } else {
+                    // File does not exist
+                    printf("The file does not exist.\n");
+                }
+            }
+            else {
+
             // Envoie le message au serveur
             // int send(int dS, const void *m, size_t lg, int flags)
             // Renvoie le nombre d'octet envoyé si la connexion est réussi et -1 si elle échoue

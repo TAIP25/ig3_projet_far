@@ -266,7 +266,7 @@ Enfin, nous avons fait des tests chacun de notre côté pour les améliorations 
         ./client <adresse IP du serveur> <port du serveur>
 
 
-sudo send claud.txt
+sudo file claud.txt
 si le fichier existe, cat 
 sinon, le fichier n'existe pas réessayez
 Choisissez le fichier à envoyer:

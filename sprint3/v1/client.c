@@ -15,7 +15,26 @@ int download_socket;
 struct sockaddr_in upload_address;
 struct sockaddr_in download_address;
 
-void * uploadFile(void * filename) {
+void * uploadFile() {
+    
+    //affiche la liste des fichiers qu'il y a dans le dossier transferClient
+    printf("\033[36m[INFO]\033[0m Liste des fichiers dans le dossier transferClient:\n");
+    
+    //ls = liste les fichiers du dossier
+    system("ls transferClient");
+    
+    char filename[MAX_CHAR] = {0};
+
+    printf("\033[36m[INFO]\033[0m Veuillez entrer le nom du fichier à envoyer:\n");
+
+    fgets(filename, MAX_CHAR, stdin);
+    
+    printf("\033[36m[INFO]\033[0m Nom du fichier: %s\n", filename);
+
+    if(filename[strlen(filename) - 1] == '\n'){
+        filename[strlen(filename) - 1] = '\0';
+    }
+
     //connect au serveur avec descripteur upload
     int connection = connect(upload_socket, (struct sockaddr*) &upload_address, sizeof(upload_address));
     if (connection == -1) {
@@ -25,7 +44,11 @@ void * uploadFile(void * filename) {
 
     // Assuming 'filename' holds the name of the file to be displayed
     FILE* file = fopen((char*)filename, "r");
+
+    printf("\033[36m[INFO]\033[0m Envoi du fichier %s\n", (char *) filename);
+
     if (file != NULL) {
+        printf("\033[36m[INFO]\033[0m Envoi du fichier %s\n", (char *) filename);
         // File exists, read and display its contents using 'cat' command
         char lines[MAX_CHAR] = {0};
         while (fgets(lines, sizeof(lines), file) != NULL) {
@@ -88,20 +111,8 @@ void * messageSend() {
 
             //sudo upload
             if (strncmp(message, "sudo upload", 11) == 0) {
-                //affiche la liste des fichiers qu'il y a dans le dossier transferClient
-                printf("\033[36m[INFO]\033[0m Liste des fichiers dans le dossier transferClient:\n");
-                system("ls transferClient"); //ls = liste les fichiers du dossier
-                printf("\033[36m[INFO]\033[0m Veuillez entrer le nom du fichier à envoyer:\n");
-                char filename[MAX_CHAR] = {0};
-                fgets(filename, MAX_CHAR, stdin);
-                if(filename[strlen(filename) - 1] == '\n'){
-                    filename[strlen(filename) - 1] = '\0';
-                }
-
                 pthread_t threadUpload;
-                pthread_create(&threadUpload, NULL, uploadFile, filename);
-
-                
+                pthread_create(&threadUpload, NULL, uploadFile, NULL);
             }
             else {
 
@@ -196,8 +207,8 @@ int main(int argc, char *argv[]) {
     // Renvoie le port en format réseau en cas de succès et 0 en cas d'échec
     // argv[2] = port du serveur
     server_address.sin_port = htons(atoi(argv[2]));
-    upload_address.sin_port = htons(atoi(argv[2]+1));
-    download_address.sin_port = htons(atoi(argv[2]+2));
+    upload_address.sin_port = htons(atoi(argv[2]) + 1);
+    download_address.sin_port = htons(atoi(argv[2]) + 2);
 
     // Connecte la socket au serveur
     // connect(int dS, struct sockaddr *aS, socklen_t lgA)

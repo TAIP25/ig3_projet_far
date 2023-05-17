@@ -288,12 +288,14 @@ void * threadFileDownload(){
             perror("Erreur accept\n");
             exit(0);
         }
+        printf("\033[36m[INFO]\033[0m Un client veut envoyer un fichier\n");
         char file[MAX_CHAR];
         int recvFile;
         if((recvFile = recv(dSFileClient, file, MAX_CHAR, 0)) == -1){
             perror("Erreur recv\n");
             exit(0);
         }
+        printf("\033[36m[INFO]\033[0m Fichier reçu : %s\n", file);
     }
     pthread_exit(0);
 }
@@ -308,6 +310,7 @@ void * threadFileUpload(){
             perror("Erreur accept\n");
             exit(0);
         }
+        printf("\033[36m[INFO]\033[0m Un client veut recevoir un fichier\n");
         char file[MAX_CHAR];
         int sendFile;
         if((sendFile = send(dSFileClient, file, MAX_CHAR, 0)) == -1){

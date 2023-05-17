@@ -12,7 +12,8 @@
 
 // Descripteur de socket du serveur
 int dSClient;
-int dSFile;
+int dSFileDownload;
+int dSFileUpload;
 
 // Initialise la liste des descripteurs de socket des clients à -1
 void initDSCList(){
@@ -277,19 +278,39 @@ void * threadMemory(){
     pthread_exit(0);
 }
 
-// Fonction permettant de gérer entrée des fichiers
-void * threadFile(){
+// Fonction permettant de gérer le download de fichier (coté serveur)
+void * threadFileDownload(){
     while(1){
         struct sockaddr_in adresseClient;
         socklen_t longueurAdresseClient = sizeof(adresseClient);
         int dSFileClient;
-        if(dSFileClient = accept(dSFile, (struct sockaddr *)&adresseClient, &longueurAdresseClient)){
+        if((dSFileClient = accept(dSFileDownload, (struct sockaddr *)&adresseClient, &longueurAdresseClient))){
             perror("Erreur accept\n");
             exit(0);
         }
         char file[MAX_CHAR];
         int recvFile;
-        if(recvFile = recv(dSFileClient, file, MAX_CHAR, 0) == -1){
+        if((recvFile = recv(dSFileClient, file, MAX_CHAR, 0)) == -1){
+            perror("Erreur recv\n");
+            exit(0);
+        }
+    }
+    pthread_exit(0);
+}
+
+// Fonction permettant de gérer le upload de fichier (coté serveur)
+void * threadFileUpload(){
+    while(1){
+        struct sockaddr_in adresseClient;
+        socklen_t longueurAdresseClient = sizeof(adresseClient);
+        int dSFileClient;
+        if((dSFileClient = accept(dSFileUpload, (struct sockaddr *)&adresseClient, &longueurAdresseClient))){
+            perror("Erreur accept\n");
+            exit(0);
+        }
+        char file[MAX_CHAR];
+        int sendFile;
+        if((sendFile = send(dSFileClient, file, MAX_CHAR, 0)) == -1){
             perror("Erreur recv\n");
             exit(0);
         }
@@ -312,7 +333,7 @@ void sigint_handler(int sig) {
         exit(0);
     }
 
-    if(shutdown(dSFile, 2) == -1){
+    if(shutdown(dSFileDownload, 2) == -1){
         perror("Erreur fermeture connexion\n");
         exit(0);
     }
@@ -366,25 +387,30 @@ int main(int argc, char *argv[]) {
     // Création de la structure aS
     // aS = adresse du serveur
     struct sockaddr_in aSClient;
-    struct sockaddr_in aSFile;
+    struct sockaddr_in aSFileDownload;
+    struct sockaddr_in aSFileUpload;
+    
     
 
     // Stocke la famille d'adresse dans la structure aS
     // AF_INET = Protocole IP
     aSClient.sin_family = AF_INET;
-    aSFile.sin_family = AF_INET;
+    aSFileDownload.sin_family = AF_INET;
+    aSFileUpload.sin_family = AF_INET;
 
     // Converti l'adresse IP en format réseau
     // INADDR_ANY = adresse IP de la machine
     aSClient.sin_addr.s_addr = INADDR_ANY;
-    aSFile.sin_addr.s_addr = INADDR_ANY;
+    aSFileDownload.sin_addr.s_addr = INADDR_ANY;
+    aSFileUpload.sin_addr.s_addr = INADDR_ANY;
 
     // Converti le port en format réseau
     // unsigned short htons(unsigned short hostshort)
     // Renvoie le port en format réseau en cas de succès et 0 en cas d'échec
     // argv[1] = port du serveur
     aSClient.sin_port = htons(atoi(argv[1]));
-    aSFile.sin_port = htons(atoi(argv[1]) + 1);
+    aSFileDownload.sin_port = htons(atoi(argv[1]) + 1);
+    aSFileUpload.sin_port = htons(atoi(argv[1]) + 2);
 
     // Création du socket pour les clients
     // int socket(int domaine, int type, int protocole)
@@ -393,12 +419,17 @@ int main(int argc, char *argv[]) {
     // PF_INET = Protocole IP
     // SOCK_STREAM = Protocole TCP
     // 0 = Protocole par défaut
-    if(dSClient = socket(PF_INET, SOCK_STREAM, 0) == -1){
+    if((dSClient = socket(PF_INET, SOCK_STREAM, 0)) == -1){
         perror("Erreur création socket\n");
         exit(0);
     }
     
-    if(dSFile = socket(PF_INET, SOCK_STREAM, 0) == -1){
+    if((dSFileDownload = socket(PF_INET, SOCK_STREAM, 0)) == -1){
+        perror("Erreur création socket\n");
+        exit(0);
+    }
+
+    if((dSFileUpload = socket(PF_INET, SOCK_STREAM, 0)) == -1){
         perror("Erreur création socket\n");
         exit(0);
     }
@@ -416,7 +447,12 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    if(bind(dSFile, (struct sockaddr*)&aSFile, sizeof(aSFile)) == -1){
+    if(bind(dSFileDownload, (struct sockaddr*)&aSFileDownload, sizeof(aSFileDownload)) == -1){
+        perror("Erreur liaison socket\n");
+        exit(0);
+    }
+
+    if(bind(dSFileUpload, (struct sockaddr*)&aSFileUpload, sizeof(aSFileUpload)) == -1){
         perror("Erreur liaison socket\n");
         exit(0);
     }
@@ -433,7 +469,12 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    if(listen(dSFile, 10) == -1){
+    if(listen(dSFileDownload, 10) == -1){
+        perror("Erreur mise en écoute\n");
+        exit(0);
+    }
+
+    if(listen(dSFileUpload, 10) == -1){
         perror("Erreur mise en écoute\n");
         exit(0);
     }
@@ -516,7 +557,7 @@ int main(int argc, char *argv[]) {
         perror("Erreur lors de la fermeture de la connexion\n");
         exit(0);
     }
-    if(shutdown(dSFile, 2) == -1){
+    if(shutdown(dSFileDownload, 2) == -1){
         perror("Erreur lors de la fermeture de la connexion\n");
         exit(0);
     }

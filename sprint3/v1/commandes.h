@@ -82,4 +82,6 @@ int properPseudo(char* pseudo);
 // post: Attention, si l'envoie du message échoue, une erreur est throw
 void sendRename(char* pseudo, int dSC);
 
+// Appelé quand le client envoie la commande down
+
 #endif

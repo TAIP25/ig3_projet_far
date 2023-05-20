@@ -41,14 +41,18 @@ void * uploadFile() {
         perror("Erreur lors de la connexion pour upload");
         exit(0);
     }
+    
+    char filepath[MAX_CHAR] = strcat("transferClient/", filename);
+
+    printf("\033[36m[INFO]\033[0m Envoi du fichier %s\n", filepath);
 
     // Assuming 'filename' holds the name of the file to be displayed
-    FILE* file = fopen((char*)filename, "r");
+    FILE* file = fopen(filepath, "r");
 
-    printf("\033[36m[INFO]\033[0m Envoi du fichier %s\n", (char *) filename);
+    printf("\033[36m[INFO]\033[0m Envoi du fichier %s\n", filepath);
 
     if (file != NULL) {
-        printf("\033[36m[INFO]\033[0m Envoi du fichier %s\n", (char *) filename);
+        printf("\033[36m[INFO]\033[0m Envoi du fichier %s\n", filepath);
         // File exists, read and display its contents using 'cat' command
         char lines[MAX_CHAR] = {0};
         while (fgets(lines, sizeof(lines), file) != NULL) {
@@ -209,6 +213,12 @@ int main(int argc, char *argv[]) {
     server_address.sin_port = htons(atoi(argv[2]));
     upload_address.sin_port = htons(atoi(argv[2]) + 1);
     download_address.sin_port = htons(atoi(argv[2]) + 2);
+
+    int connection = connect(upload_socket, (struct sockaddr*) &upload_address, sizeof(upload_address));
+    if (connection == -1) {
+        perror("Erreur lors de la connexion pour upload");
+        exit(0);
+    }
 
     // Connecte la socket au serveur
     // connect(int dS, struct sockaddr *aS, socklen_t lgA)

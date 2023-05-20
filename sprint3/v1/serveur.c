@@ -245,7 +245,7 @@ void * clientReceive(void* arg){
 }
 
 // Fonction permettant de gérer la fermeture des threads
-void * threadMemory(){
+void * cleanThread(){
     while(1){
         sem_wait(&semaphoreMemory);
         pthread_mutex_lock(&mutex);
@@ -279,12 +279,12 @@ void * threadMemory(){
 }
 
 // Fonction permettant de gérer le download de fichier (coté serveur)
-void * threadFileDownload(){
+void * fileDownload(){
     while(1){
         struct sockaddr_in adresseClient;
         socklen_t longueurAdresseClient = sizeof(adresseClient);
         int dSFileClient;
-        if((dSFileClient = accept(dSFileDownload, (struct sockaddr *)&adresseClient, &longueurAdresseClient))){
+        if((dSFileClient = accept(dSFileDownload, (struct sockaddr *)&adresseClient, &longueurAdresseClient)) == -1){
             perror("Erreur accept\n");
             exit(0);
         }
@@ -301,12 +301,12 @@ void * threadFileDownload(){
 }
 
 // Fonction permettant de gérer le upload de fichier (coté serveur)
-void * threadFileUpload(){
+void * fileUpload(){
     while(1){
         struct sockaddr_in adresseClient;
         socklen_t longueurAdresseClient = sizeof(adresseClient);
         int dSFileClient;
-        if((dSFileClient = accept(dSFileUpload, (struct sockaddr *)&adresseClient, &longueurAdresseClient))){
+        if((dSFileClient = accept(dSFileUpload, (struct sockaddr *)&adresseClient, &longueurAdresseClient)) == -1){
             perror("Erreur accept\n");
             exit(0);
         }
@@ -484,7 +484,9 @@ int main(int argc, char *argv[]) {
 
 
     // Création du thread pour la gestion de la mémoire partagée pour les autres threads
-    pthread_t threadClean;
+    pthread_t threadCleanThread;
+    pthread_t threadFileDownload;
+    pthread_t threadFileUpload;
 
     // int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine) (void *), void *arg);
     // Renvoie 0 en cas de succès et -1 en cas d'échec
@@ -492,10 +494,21 @@ int main(int argc, char *argv[]) {
     // attr = pointeur sur les attributs du thread
     // start_routine = pointeur sur la fonction à exécuter par le thread
     // arg = pointeur sur les arguments de la fonction
-    if(pthread_create(&threadClean, NULL, threadMemory, NULL) == -1){
+    if(pthread_create(&threadCleanThread, NULL, cleanThread, NULL) == -1){
         perror("Erreur lors de la création du thread\n");
         exit(0);
     }
+
+    if(pthread_create(&threadFileDownload, NULL, fileDownload, NULL) == -1){
+        perror("Erreur lors de la création du thread\n");
+        exit(0);
+    }
+
+    if(pthread_create(&threadFileUpload, NULL, fileUpload, NULL) == -1){
+        perror("Erreur lors de la création du thread\n");
+        exit(0);
+    }
+
 
     // Gestion des clients
     // Dès qu'un client se connecte, un thread est créé pour gérer la connexion

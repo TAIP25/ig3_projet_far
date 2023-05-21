@@ -6,4 +6,5 @@ sudo quit : déconnecte le client du serveur
 sudo list : affiche la liste des clients connectés (id : pseudo)
 sudo kick <pseudo> : déconnecte le client <pseudo> du serveur
 sudo send : Liste les fichiers disponibles et choisissez-en un à envoyer
-sudo get <file> : récupère le fichier <file> du serveur 
+sudo upload : envoie le fichier au serveur 
+sudo download : télécharge le fichier du serveur

@@ -117,6 +117,9 @@ void * messageSend() {
                 pthread_t threadUpload;
                 pthread_create(&threadUpload, NULL, uploadFile, NULL);
             }
+            else if (strncmp(message, "sudo download", 13) == 0) {
+                
+            }
             else {
 
             // Envoie le message au serveur

@@ -18,8 +18,14 @@
 // Taille maximale d'un pseudo
 #define MAX_PSEUDO 20
 
-// Nom du fichier qui contient touts les fichiers
-#define FILENAME "transfer"
+// Taille maximale d'un nom de fichier
+#define MAX_FILENAME 50
+
+// Chemin du dossier de transfert du client
+#define CLIENT_TRANSFER_FOLDER "transferClient/"
+
+// Chemin du dossier de transfert du serveur
+#define SERVER_TRANSFER_FOLDER "transferServeur/"
 
 // Regroupe les informations d'un client dans une structure
 // Cette structure est utilisée pour la liste des clients

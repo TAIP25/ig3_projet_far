@@ -289,13 +289,55 @@ void * fileDownload(){
             exit(0);
         }
         printf("\033[36m[INFO]\033[0m Un client veut envoyer un fichier\n");
-        char file[MAX_CHAR];
-        int recvFile;
-        if((recvFile = recv(dSFileClient, file, MAX_CHAR, 0)) == -1){
+        
+        char filename[MAX_FILENAME];
+        
+        if(recv(dSFileClient, filename, MAX_CHAR, 0) == -1){
             perror("Erreur recv\n");
             exit(0);
         }
-        printf("\033[36m[INFO]\033[0m Fichier reçu : %s\n", file);
+
+        printf("\033[36m[INFO]\033[0m Le client veut envoyer le fichier %s\n", filename);
+        
+        char filepath[MAX_CHAR] = {0};
+        strcat(filepath, SERVER_TRANSFER_FOLDER);
+        strcat(filepath, filename);
+
+        int sizeFile;
+        
+        if(recv(dSFileClient, &sizeFile, sizeof(int), 0) == -1){
+            perror("Erreur recv\n");
+            exit(0);
+        }
+        
+        printf("\033[36m[INFO]\033[0m Le fichier fait %d octets\n", sizeFile);
+
+        // Ouvrir un nouveau fichier pour écrire les données
+        FILE* file = fopen(filepath, "w");
+
+        if (file != NULL) {
+            char lines[sizeFile];
+            int totalBytesReceived = 0;
+            int bytesRead;
+            while (totalBytesReceived < sizeFile) {
+                bytesRead = recv(dSFileClient, lines + totalBytesReceived, sizeFile - totalBytesReceived, 0);
+                if (bytesRead <= 0) {
+                    // Erreur de réception ou connexion fermée
+                    break;
+                }
+                totalBytesReceived += bytesRead;
+            }
+            fwrite(lines, 1, totalBytesReceived, file);
+            fclose(file);
+
+            if (totalBytesReceived == sizeFile) {
+                printf("\033[36m[INFO]\033[0m Fichier reçu avec succès.\n");
+            } else {
+                printf("\033[31m[ERREUR]\033[0m Échec de la réception du fichier.\n");
+            }
+        } else {
+            printf("\033[31m[ERREUR]\033[0m Impossible d'ouvrir le fichier pour écrire.\n");
+        }
     }
     pthread_exit(0);
 }

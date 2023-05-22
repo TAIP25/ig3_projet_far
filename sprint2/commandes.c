@@ -165,7 +165,10 @@ void sendHelp(int dSC){
     char line[MAX_CHAR];
     while(fgets(line, sizeof(line), f)){
         line[strlen(line)-1] = '\0';
-        if(send(dSC, line, sizeof(line), 0) == -1){
+        char finalLine[MAX_CHAR];
+        strcpy(finalLine, "\033[36m[INFO]\033[0m ");
+        strcat(finalLine, line);
+        if(send(dSC, finalLine, sizeof(finalLine), 0) == -1){
             perror("Erreur lors de l'envoie du message");
             exit(0);
         }

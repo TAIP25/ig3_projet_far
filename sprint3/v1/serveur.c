@@ -7,6 +7,7 @@
 #include <semaphore.h>
 #include <unistd.h>
 #include <signal.h>
+
 #include "global.h"
 #include "commandes.h"
 
@@ -40,6 +41,17 @@ void initAC(){
 void initThreadEnd(){
     for(int i = 0; i < MAX_CLIENT; i++){
         clientList[i].threadEnd = 0;
+    }
+}
+
+int fileExist(char * filepath){
+    FILE * file = fopen(filepath, "r");
+    if(file == NULL){
+        return 0;
+    }
+    else{
+        fclose(file);
+        return 1;
     }
 }
 
@@ -214,12 +226,10 @@ void * clientReceive(void* arg){
                 // Change le pseudo du client
                 sendRename(arg, getDSC(i));
             }
-            // Vérifie si la commande est "sudo file"
-            else if(strncmp(commande, "file", 4) == 0){
+            // Vérifie si la commande est "sudo download"
+            else if(strncmp(commande, "download", 8) == 0){
                 // Envoie un message au client pour lui demander le nom du fichier
-                //sendFile(getDSC(i));
-                char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m Commende en court de construction";
-                send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0);
+                sendDownload(getDSC(i));
             }
             else{
                 // Avertis le client que la commande n'existe pas
@@ -288,7 +298,6 @@ void * fileDownload(){
             perror("Erreur accept\n");
             exit(0);
         }
-        printf("\033[36m[INFO]\033[0m Un client veut envoyer un fichier\n");
         
         char filename[MAX_FILENAME];
         
@@ -297,11 +306,29 @@ void * fileDownload(){
             exit(0);
         }
 
-        printf("\033[36m[INFO]\033[0m Le client veut envoyer le fichier %s\n", filename);
-        
-        char filepath[MAX_CHAR] = {0};
-        strcat(filepath, SERVER_TRANSFER_FOLDER);
+        int filepathSize = MAX_FILENAME + (int) strlen(SERVER_TRANSFER_FOLDER);
+        char filepath[filepathSize];
+        strcpy(filepath, SERVER_TRANSFER_FOLDER);
         strcat(filepath, filename);
+
+        //Si le fichier existe alors on rajoute _bis à la fin du nom du fichier
+        while(fileExist(filepath)){
+            // Récuper l'extension du fichier
+            char *ext = strrchr(filename, '.');
+            char extTemp[MAX_CHAR];
+            strcpy(extTemp, ext);
+            // "Supprime" l'extension du fichier
+            *ext = '\0';
+            // Ajoute le numéro à la fin du nom du fichier
+            strcat(filename, "_bis");
+            // Ajoute l'extension du fichier
+            strcat(filename, extTemp);
+            // Reaffecte le chemin du fichier dans le cas où le fichier existe déjà
+            strcpy(filepath, SERVER_TRANSFER_FOLDER);
+            strcat(filepath, filename);
+        }
+
+        printf("\033[36m[INFO]\033[0m Le client veut envoyer le fichier %s\n", filename);
 
         int sizeFile;
         
@@ -316,30 +343,46 @@ void * fileDownload(){
         FILE* file = fopen(filepath, "w");
 
         if (file != NULL) {
-            char lines[sizeFile];
+            // Les données sont stockées dans content
+            char content[sizeFile];
+            // Nombre total d'octets reçus (Pour l'instant 0)
             int totalBytesReceived = 0;
-            int bytesRead;
+            // Nombre d'octets reçus lors de la dernière réception
+            int bytesRead = 0;
+            // Tant que le nombre total d'octets reçus est inférieur à la taille du fichier on continue de recevoir
             while (totalBytesReceived < sizeFile) {
-                bytesRead = recv(dSFileClient, lines + totalBytesReceived, sizeFile - totalBytesReceived, 0);
+                // On stocke le nombre d'octets reçus dans bytesRead
+                // On le stocke dans content à partir de l'indice totalBytesReceived
+                // On reçoit au maximum sizeFile - totalBytesReceived octets/caractères
+                bytesRead = recv(dSFileClient, content + totalBytesReceived, sizeFile - totalBytesReceived, 0);
                 if (bytesRead <= 0) {
                     // Erreur de réception ou connexion fermée
                     break;
                 }
                 totalBytesReceived += bytesRead;
             }
-            fwrite(lines, 1, totalBytesReceived, file);
+            // On écrit le contenu de content dans le fichier
+            // size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+            // Renvoie le nombre d'éléments écrits avec succès
+            // ptr = pointeur vers le tableau de données à écrire
+            // size = taille en octets de chaque élément à écrire
+            // nmemb = nombre d'éléments à écrire
+            // stream = pointeur vers le flux de données
+            fwrite(content, 1, totalBytesReceived, file);
             fclose(file);
 
             if (totalBytesReceived == sizeFile) {
                 printf("\033[36m[INFO]\033[0m Fichier reçu avec succès.\n");
-            } else {
-                printf("\033[31m[ERREUR]\033[0m Échec de la réception du fichier.\n");
+            } 
+            else {
+                printf("\033[31m[ERROR]\033[0m Échec de la réception du fichier.\n");
             }
-        } else {
-            printf("\033[31m[ERREUR]\033[0m Impossible d'ouvrir le fichier pour écrire.\n");
+        } 
+        else {
+            printf("\033[31m[ERROR]\033[0m Impossible d'ouvrir le fichier pour écrire.\n");
         }
-    }
-    pthread_exit(0);
+
+    }   
 }
 
 // Fonction permettant de gérer le upload de fichier (coté serveur)
@@ -352,15 +395,33 @@ void * fileUpload(){
             perror("Erreur accept\n");
             exit(0);
         }
-        printf("\033[36m[INFO]\033[0m Un client veut recevoir un fichier\n");
-        char file[MAX_CHAR];
-        int sendFile;
-        if((sendFile = send(dSFileClient, file, MAX_CHAR, 0)) == -1){
-            perror("Erreur recv\n");
-            exit(0);
+
+        char filename[MAX_FILENAME];
+        recv(dSFileClient, filename, MAX_CHAR, 0);
+
+        printf("\033[36m[INFO]\033[0m Le client veut télécharger le fichier %s\n", filename);
+
+        char filepath[MAX_FILENAME];
+        strcpy(filepath, SERVER_TRANSFER_FOLDER);
+        strcat(filepath, filename);
+ 
+        // TODO
+        FILE* file = fopen(filepath, "r");
+        if(file == NULL){
+            printf("\033[31m[ERROR]\033[0m Le fichier n'existe pas\n");
+            int error = -1;
+            send(dSFileClient, &error, sizeof(int), 0);
+        }
+        else{
+            int sizeFile = getFileSize(file);
+            send(dSFileClient, &sizeFile, sizeof(int), 0);
+            char content[sizeFile];
+            fread(content, 1, sizeFile, file);
+            send(dSFileClient, content, sizeFile, 0);
+            fclose(file);
+            printf("\033[36m[INFO]\033[0m Fichier envoyé avec succès\n");
         }
     }
-    pthread_exit(0);
 }
 
 // Fonction de gestion des signaux

@@ -409,38 +409,54 @@ void sendRename(char* pseudo, int dSC){
     }
 }
 
-
-// Appelé quand le client envoie la commande "sudo file"
-
-/*
-void sendFile(int dSC, char* fileName){
+// Appelé quand le client envoie la commande "sudo download"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Attention, si l'envoie du message échoue, une erreur est throw
+void sendDownload(int dSC){
     if(isConnected(dSC) == 0){
         perror("Erreur le client n'est pas connecté");
         exit(0);
     }
-    // On vérifie que le fichier existe
-    FILE* file = fopen(fileName, "r");
-    if(file == NULL){
-        perror("Erreur le fichier n'existe pas");
-        exit(0);
-    }
-    fclose(file);
-
-    // On envoie le nom du fichier au client
-    if(send(dSC, fileName, MAX_CHAR, 0) == -1){
+    
+    //affiche la liste des fichiers qu'il y a dans le dossier spécifié
+    char download[MAX_CHAR] = "\033[36m[INFO]\033[0m Liste des fichiers dans le dossier spécifié pour le serveur:";
+    
+    if(send(dSC, download, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
+    
+    //On affiche la liste des fichiers dans le dossier spécifié
+    char command[MAX_CHAR] = "ls ";
+    strcat(command, SERVER_TRANSFER_FOLDER);
+    strcat(command, " > list.txt");
+    system(command);
 
-    // On envoie le fichier au client
-    char buffer[MAX_CHAR];
-    file = fopen(fileName, "r");
-    while(fgets(buffer, MAX_CHAR, file) != NULL){
-        if(send(dSC, buffer, MAX_CHAR, 0) == -1){
+    //On ouvre le fichier list.txt
+    FILE* file = fopen("list.txt", "r");
+    if(file == NULL){
+        perror("Erreur lors de l'ouverture du fichier list.txt");
+        exit(0);
+    }
+
+    //On lit le fichier list.txt et on l'envoie au client
+    char line[MAX_CHAR];
+    while(fgets(line, MAX_CHAR, file) != NULL){
+
+        //On enlève le \n à la fin de la ligne
+        line[strlen(line) - 1] = '\0';
+
+        if(send(dSC, line, MAX_CHAR, 0) == -1){
             perror("Erreur lors de l'envoie du message");
             exit(0);
         }
     }
     fclose(file);
+
+    //On supprime le fichier list.txt
+    if(remove("list.txt") == -1){
+        perror("Erreur lors de la suppression du fichier list.txt");
+        exit(0);
+    }
 }
-*/

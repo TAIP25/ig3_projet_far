@@ -82,6 +82,10 @@ int properPseudo(char* pseudo);
 // post: Attention, si l'envoie du message échoue, une erreur est throw
 void sendRename(char* pseudo, int dSC);
 
-// Appelé quand le client envoie la commande down
+// Appelé quand le client envoie la commande "sudo download"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Attention, si l'envoie du message échoue, une erreur est throw
+void sendDownload(int dSC);
 
 #endif

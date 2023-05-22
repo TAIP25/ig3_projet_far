@@ -56,4 +56,8 @@ extern sem_t semaphoreSlot;
 // Création d'un sémaphore indiquant le nombre de threads à nettoyer
 extern sem_t semaphoreMemory;
 
+// Création d'une fonction permettant de savoir si un fichier existe
+// Retourne 1 si le fichier existe, 0 sinon
+int fileExist(char * filepath);
+
 #endif

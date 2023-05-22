@@ -44,18 +44,6 @@ void initThreadEnd(){
     }
 }
 
-int fileExist(char * filepath){
-    FILE * file = fopen(filepath, "r");
-    if(file == NULL){
-        return 0;
-    }
-    else{
-        fclose(file);
-        return 1;
-    }
-}
-
-
 // Gère la connexion d'un client
 // arg = l'indice du descripteur de socket du client
 void * clientReceive(void* arg){
@@ -372,7 +360,9 @@ void * fileDownload(){
             fclose(file);
 
             if (totalBytesReceived == sizeFile) {
-                printf("\033[36m[INFO]\033[0m Fichier reçu avec succès.\n");
+                char successMessage[MAX_CHAR] = "\033[36m[INFO]\033[0m Fichier reçu avec succès.";
+                printf("%s\n", successMessage);
+                send(dSFileClient, successMessage, MAX_CHAR, 0);
             } 
             else {
                 printf("\033[31m[ERROR]\033[0m Échec de la réception du fichier.\n");
@@ -409,16 +399,22 @@ void * fileUpload(){
         FILE* file = fopen(filepath, "r");
         if(file == NULL){
             printf("\033[31m[ERROR]\033[0m Le fichier n'existe pas\n");
+            // TODO
+            /*
             int error = -1;
             send(dSFileClient, &error, sizeof(int), 0);
+            */
         }
         else{
-            int sizeFile = getFileSize(file);
+            fseek(file, 0, SEEK_END);
+            int sizeFile = ftell(file);
+            fseek(file, 0, SEEK_SET);
+            printf("\033[36m[INFO]\033[0m Le fichier fait %d octets\n", sizeFile);
             send(dSFileClient, &sizeFile, sizeof(int), 0);
-            char content[sizeFile];
-            fread(content, 1, sizeFile, file);
-            send(dSFileClient, content, sizeFile, 0);
-            fclose(file);
+            char lines[MAX_CHAR] = {0};
+            while(fgets(lines, MAX_CHAR, file) != NULL){
+                send(dSFileClient, lines, strlen(lines), 0);
+            }
             printf("\033[36m[INFO]\033[0m Fichier envoyé avec succès\n");
         }
     }
@@ -489,7 +485,6 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    // TODO: Faire une troisième adresse (1 client, 1 file upload, 1 file download)
     // Création de la structure aS
     // aS = adresse du serveur
     struct sockaddr_in aSClient;

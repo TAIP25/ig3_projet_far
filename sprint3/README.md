@@ -54,23 +54,18 @@ Cela permet de mieux organiser le code et de mieux comprendre le fonctionnement 
 
 Les variables globales sont dans le fichier **`global.c`** et **`global.h`**.
 Il y a des variables/constantes qui sont utilisées dans **`client.c`**, **`serveur.c`** et **`commandes.c`** ou que dans **`serveur.c`** et **`commandes.c`**. 
-Cela permet de modifier qu'une seule fois une variable globale si on veut changer sa valeur.
+Cela permet de modifier qu'une seule fois une variable globale si on veut changer sa valeur ou cela permet d'avoir des fonctions en commun entre **`client.c`** et **`serveur.c`** comme la fonction **`fileExist()`**.
 
 ### **`client.c`**
 
 Ce fichier contient le code du client. Nous avons ajouté des commandes pour l'envoi et la récupération de fichier. Ces commandes nécéssitent l'ouverture de deux nouveaux ports pour le dowload et upload de fichiers qui utilisent un nouveau socket et une nouvelle connection.
 
+Ce fichier contient le code du client. Nous avons ajouté les fonctions, les threads pour l'envoi et la récupération de fichier. Ces commandes nécéssitent la connexion à 2 nouveaux ports pour le download et upload de fichiers qui utilisent un nouveau socket et une nouvelle connexion.
+
 ### **`serveur.c`**
 
-Ce fichier contient le code du serveur. 
-
-
-X
-X
-X
-X
-X
-
+Ce fichier contient le code du serveur.
+Nous avons ajouté les fonctions, les threads pour l'envoi et la récupération de fichier. Création d'un nouveau socket et d'une nouvelle connexion pour le download et upload de fichiers.
 
 ## Difficultés rencontrées
 

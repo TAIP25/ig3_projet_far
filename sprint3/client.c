@@ -77,7 +77,6 @@ void * uploadFile() {
     pthread_exit(0);
 }
 
-//TODO
 void * downloadFile() {
     
     // Création de la socket   

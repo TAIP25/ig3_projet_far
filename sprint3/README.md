@@ -14,19 +14,23 @@
 
   1.5. [serveur.c](#serveurc)
 
+  1.6. [transferServer et transferClient](#transferserver-et-transferclient)
+
 **2. [Protocole de communication](#protocole-de-communication)**
   
-  2.1. [Explication du diagramme de séquence](#explication-du-diagramme-de-séquence)
+  2.1 [Architecture du projet](#architecture-du-projet)
+
+  2.2. [Explication du diagramme de séquence](#explication-du-diagramme-de-séquence)
   
-  2.2. [Extrait de la documentation de mermaid](#extrait-de-la-documentation-de-mermaid)
+  2.3. [Extrait de la documentation de mermaid](#extrait-de-la-documentation-de-mermaid)
     
   - [Loop](#loop)
   - [Alt](#alt)
   - [Par](#par)
 
-  2.3. [Rappel](#rappel)
+  2.4. [Rappel](#rappel)
   
-  2.4. [Diagramme de séquence](#diagramme-de-séquence)
+  2.5. [Diagramme de séquence](#diagramme-de-séquence)
 
 **3. [Difficultés rencontrées](#difficultés-rencontrées)**
 
@@ -70,6 +74,210 @@ Nous avons ajouté les fonctions, les threads pour l'envoi et la récupération 
 Ce sont des dossier qui contiennent les fichiers qui sont envoyés et reçus par le serveur et le client. Dans la réalité, ils seraient dans un dossier différent car le serveur et le client ne sont pas sur la même machine d'ailleurs il y aurait plusieurs clients avec donc plusieurs dossiers différents de **`transferClient`**. C'est pour cela que lorsque le client download un fichier, il est download pour tous les clients puisque tous les clients sont sur le même dossier.
 
 Nous avons ajouté quelques fichiers d'exemple dans **`transferServer`** et dans **`transferClient`**.
+
+## Protocole de communication
+
+Le diagramme de l'architecture ci-dessous explique le fonctionnement du serveur et des clients, avant de rentrer dans les détails avec le diagramme de séquence.
+
+### Architecture du projet
+
+```mermaid
+flowchart TB
+    
+    programmeServeur --> programmeclient
+    programmeclient --> programmeServeur
+    
+
+    subgraph Serveur
+
+        programmeServeur --> fichierserveur
+        fichierserveur --> programmeServeur
+        
+        subgraph programmeServeur[Programme serveur]
+            sThreadClear --> sThreadClient
+            sThreadClient --> sThreadClear
+            sThreadPrincipal --> sThreadClient[Threads clients]            
+            sThreadPrincipal --> sThreadClear[Thread clear]            
+            sThreadPrincipal[Thread principal] --> sThreadDownload[Thread download]            
+            sThreadPrincipal --> sThreadUpload[Thread upload] 
+        end
+
+        fichierserveur[(Fichier serveur)]
+    end
+
+    subgraph Client
+
+        programmeclient --> fichierclient
+        fichierclient --> programmeclient
+
+        subgraph programmeclient[Programme client]
+            cThreadPrincipal[Thread principal] --> cThreadUpload[Thread upload]
+            cThreadPrincipal --> cThreadDownload[Thread download]
+        end
+
+        fichierclient[(Fichier client)]
+    end
+
+```
+
+### Explication du diagramme de séquence
+
+Le diagramme de séquence ci-dessous explique le fonctionnement du serveur et des clients.
+
+Voici les 3 propriétés pour comprendre le diagramme de séquence:
+
+                (Ici x et ClientLambda sont des éléments, Clients et AutresClients sont des ensembles)
+
+                ∀ x ∈ Client, x est un ClientLambda
+
+                Clients = {ClientLambda} ∪ AutresClients
+
+                0 <= |Clients| <= 10 (nombre de clients maximum dans la variable globale)
+
+### Extrait de la documentation de mermaid
+
+#### Loop
+
+        It is possible to express loops in a sequence diagram. This is done by the notation
+
+        loop Loop text
+        ... statements ...
+        end
+
+#### Alt
+
+        It is possible to express alternative paths in a sequence diagram. This is done by the notation
+
+        alt Describing text
+        ... statements ...
+        else
+        ... statements ...
+        end
+        
+        or if there is sequence that is optional (if without else).
+
+        opt Describing text
+        ... statements ...
+        end
+
+#### Par
+
+        It is possible to show actions that are happening in parallel. This is done by the notation
+
+        par [Action 1]
+        ... statements ...
+        and [Action 2]
+        ... statements ...
+        and [Action N]
+        ... statements ...
+        end
+
+### Rappel
+
+Pour afficher les différents diagrammes de séquence, **il faut installer l'extension mermaid pour visual studio code**. Si vous vous trouvez sur github, affichage est directement géré par celui-ci.
+
+### Diagramme de séquence
+
+```mermaid
+sequenceDiagram
+    participant Serveur
+    box L'ensemble des clients
+        participant ClientLambda
+        participant AutresClients
+    end
+    
+    activate Serveur
+    Serveur->>Serveur: Initialisation des différentes variables, mutex, sémaphores, mémoire partagée
+    Serveur->>Serveur: Ecoute sur les différents ports (port principal, port download, port upload)
+    
+    activate ClientLambda
+    ClientLambda->>ClientLambda: Initialisation
+    ClientLambda->>Serveur: Connexion au serveur
+
+    loop Tant que le client lambda est connecté
+
+
+
+        par Mise en place de la connexion d'un client lambda
+            ClientLambda->>ClientLambda: Lancements des threads de réception et d'envoi
+            Serveur-->>ClientLambda: Demande de pseudo
+            ClientLambda->>Serveur: Envoi du pseudo
+            Serveur->>Serveur: Mise à jour du pseudo
+            Serveur-->>ClientLambda: Message de bienvenue
+        and
+            Serveur->>Serveur: Mise à jour du tableau de sockets
+            Serveur->>Serveur: Lancement du thread qui gère la réception et l'envoi des messages du client lambda
+        end
+
+        ClientLambda->>ClientLambda: Entre un message
+
+        activate AutresClients
+
+        alt Si le message est une commande (hors sudo upload et sudo download)
+            ClientLambda->>Serveur: Envoi d'un message
+            Serveur->>Serveur: Vérification du message
+            Serveur->>Serveur: Découpage du message en token
+            Serveur->>Serveur: Vérification de la commande
+            Serveur->>Serveur: Exécution de la commande
+            
+            alt Si la commande est un sudo mp
+                Serveur->>Serveur: Vérification de l'existence du destinataire
+                Serveur-->>AutresClients: Envoi du message au destinataire
+            else Si la commande est un sudo all
+                Serveur-->>AutresClients: Diffusion du message aux autres clients (broadcast)
+            else Si la commande est un sudo help ou sudo list
+                Serveur-->>ClientLambda: Envoi de la liste des commandes ou des clients connectés
+            else Si la commande est un sudo kick ou sudo quit
+                Serveur->>Serveur: Vérification de l'existence du destinataire
+                alt Si la commande est un sudo kick
+                    Serveur->>Serveur: Vérification de l'existence de expéditeur
+                    Serveur-->>ClientLambda: Préviens le destinataire qu'il va être déconnecté
+                else Si la commande est un sudo quit (ou le programme client se ferme à l'aide de ctrl+c)
+                    Serveur-->>ClientLambda: Préviens le destinataire qu'il va être déconnecté
+                end
+                Serveur->>Serveur: Suppression de la connexion du destinataire
+                Serveur->>Serveur: Ajout d'un jeton dans le sémaphore qui gère le nombre de connexion
+                Serveur->>Serveur: Nettoyage du thread du destinataire dans la mémoire partagée
+            end
+        else Si la commande est un sudo upload
+            ClientLambda->>ClientLambda: Connexion au serveur sur le port upload
+            ClientLambda->>ClientLambda: Choix du fichier à envoyer
+            ClientLambda->>Serveur: Envoi du nom du ficher, de la taille du fichier et le contenu du fichier
+            Serveur->>Serveur: Vérification du nom du fichier (si le fichier existe déjà alors modification du nom)
+            Serveur->>Serveur: Création du fichier, écriture du contenu du fichier
+            Serveur-->>ClientLambda: Envoi d'un message de succès
+            ClientLambda->>ClientLambda: Déconnexion du serveur sur le port upload
+        else Si la commande est un sudo download
+            ClientLambda->>ClientLambda: Connexion au serveur sur le port download
+            ClientLambda->>Serveur: Demande la liste des fichiers disponibles
+            Serveur-->>ClientLambda: Envoi de la liste des fichiers disponibles
+            ClientLambda->>ClientLambda: Choix du fichier à télécharger
+            ClientLambda->>Serveur: Envoi du nom du fichier
+            Serveur-->>ClientLambda: Envoi la taille du fichier et le contenu du fichier
+            ClientLambda->>ClientLambda: Déconnexion du serveur sur le port download
+        else Si le message est un message normal
+            ClientLambda->>Serveur: Envoi d'un message
+            Serveur->>Serveur: Vérification du message
+            Serveur-->>AutresClients: Diffusion du message aux autres clients (broadcast)
+        end
+
+        deactivate AutresClients
+
+        break Le client lambda est déconnecté (avec la commande sudo quit/kick ou ctrl+c)
+            ClientLambda->>Serveur: Déconnexion du client lambda
+            Serveur->>Serveur: Suppression de la connexion du client lambda
+            Serveur->>Serveur: Ajout d'un jeton dans le sémaphore qui gère le nombre de connexion
+            Serveur->>Serveur: Nettoyage du thread du client lambda dans la mémoire partagée
+        end
+
+    end
+
+    Serveur->>Serveur: Deconnexion des clients
+    ClientLambda-->>ClientLambda: Déclenchement un message de fermeture de connexion
+    deactivate ClientLambda
+    Serveur-->>Serveur: Fermeture du serveur
+    deactivate Serveur
+```
 
 ## Difficultés rencontrées
 

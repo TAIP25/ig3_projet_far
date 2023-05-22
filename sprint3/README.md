@@ -65,9 +65,17 @@ Ce fichier contient le code du client. Nous avons ajouté des commandes pour l'e
 Ce fichier contient le code du serveur. 
 
 
+X
+X
+X
+X
+X
+
+
 ## Difficultés rencontrées
 
 La fin de l'année scolaire étant très proche, il est difficile de gérer plusieurs projets ainsi que les révisions en même temps. La partie la plus dure a été de garder la motivation à travailler au même rythme que précédemment. 
+(Léon) il faut de appuyer sur entrer après l'affichage des fichiers pour la fonction upload
 
 ## Répartition du travail
 

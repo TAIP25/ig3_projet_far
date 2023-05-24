@@ -466,7 +466,7 @@ void sendDownload(int dSC){
 // Appelé quand le client envoie la commande "sudo ff15"
 // pre: isConnected(dSC) == 1
 // post: Attention, si le client n'est pas connecté, une erreur est throw
-void sendFF15(int dSC){
+void ff15(int dSC){
     if(isConnected(dSC) == 0){
         perror("Erreur le client n'est pas connecté");
         exit(0);

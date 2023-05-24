@@ -227,7 +227,7 @@ void * clientReceive(void* arg){
             }
             // Verifie si la commande est "sudo ff15"
             else if(strncmp(commande, "ff15", 4) == 0){
-                FF15(getDSC(i));
+                ff15(getDSC(i));
             }
             else{
                 // Avertis le client que la commande n'existe pas

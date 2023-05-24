@@ -1,0 +1,11 @@
+Liste des commandes disponibles :
+sudo help : affiche la liste des commandes disponibles
+sudo all <msg> : envoie un message à tous les clients connectés (par défaut)
+sudo mp <pseudo> <msg> : envoie un message privé au client <pseudo>
+sudo quit : déconnecte le client du serveur
+sudo list : affiche la liste des clients connectés (id : pseudo)
+sudo kick <pseudo> : déconnecte le client <pseudo> du serveur
+sudo send : Liste les fichiers disponibles et choisissez-en un à envoyer
+sudo rename <pseudo> : renomme le client avec le pseudo <pseudo>
+sudo upload : envoie le fichier au serveur 
+sudo download : télécharge le fichier du serveur

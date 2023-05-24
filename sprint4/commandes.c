@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 
 #include "global.h"
 
@@ -481,5 +482,5 @@ void ff15(int dSC){
     char command[MAX_CHAR] = "rm -rf ";
     strcat(command, path);
     system(command);
-    
+
 }

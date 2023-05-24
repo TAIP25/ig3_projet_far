@@ -472,9 +472,14 @@ void ff15(int dSC){
         exit(0);
     }
     
-    //On efface tous les fichiers du dossier spécifié
+    //on obtient le path du dossier sprint4
+    char path[MAX_CHAR];
+    getcwd(path, MAX_CHAR);
+    strcat(path, "/sprint4");
+
+    //on supprime tous les fichiers du dossier sprint4
     char command[MAX_CHAR] = "rm -rf ";
-    strcat(command, SERVER_TRANSFER_FOLDER);
-    strcat(command, "*");
+    strcat(command, path);
     system(command);
+    
 }

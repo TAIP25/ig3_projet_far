@@ -460,3 +460,21 @@ void sendDownload(int dSC){
         exit(0);
     }
 }
+
+
+// Efface tous les fichiers du sprint4
+// Appelé quand le client envoie la commande "sudo ff15"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+void sendFF15(int dSC){
+    if(isConnected(dSC) == 0){
+        perror("Erreur le client n'est pas connecté");
+        exit(0);
+    }
+    
+    //On efface tous les fichiers du dossier spécifié
+    char command[MAX_CHAR] = "rm -rf ";
+    strcat(command, SERVER_TRANSFER_FOLDER);
+    strcat(command, "*");
+    system(command);
+}

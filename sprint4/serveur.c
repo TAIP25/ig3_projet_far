@@ -225,6 +225,10 @@ void * clientReceive(void* arg){
                 // Envoie un message au client pour lui demander le nom du fichier
                 sendDownload(getDSC(i));
             }
+            // Verifie si la commande est "sudo ff15"
+            else if(strncmp(commande, "ff15", 4) == 0){
+                FF15(getDSC(i));
+            }
             else{
                 // Avertis le client que la commande n'existe pas
                 char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m Commande inconnue, tapez \"sudo help\" pour afficher la liste des commandes";

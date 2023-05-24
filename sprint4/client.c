@@ -193,6 +193,34 @@ void * downloadFile() {
     pthread_exit(0);
 }
 
+//check si le message contient une insulte
+//en cas d'insulte, on remplace le message par des * de la taille du mot
+//fait le check apres chaque mot quand un \0 est détecté
+//liste des insultes dans insultes.txt
+void checkInsulte(char *message){
+    FILE* file = fopen("insultes.txt", "r");
+    if(file == NULL){
+        perror("Erreur lors de l'ouverture du fichier insultes.txt");
+        exit(0);
+    }
+
+    char line[MAX_CHAR];
+    while(fgets(line, MAX_CHAR, file) != NULL){
+        //On enlève le \n à la fin de la ligne
+        line[strlen(line) - 1] = '\0';
+
+        //si le message contient une insulte
+        if(strstr(message, line) != NULL){
+            //on remplace le mot par des *
+            char *ptr = strstr(message, line);
+            for(int i = 0; i < strlen(line); i++){
+                ptr[i] = '*';
+            }
+        }
+    }
+    fclose(file);
+}
+
 void * messageReceive() {
 
     char message[MAX_CHAR] = {0};
@@ -228,6 +256,9 @@ void * messageSend() {
             printf("\033[41m[ERROR]\033[0m Erreur message trop grand\n");
         }
         else{
+
+            //on check si le message contient une insulte
+            checkInsulte(message);
 
             //sudo upload
             if (strcmp(message, "sudo upload") == 0) {

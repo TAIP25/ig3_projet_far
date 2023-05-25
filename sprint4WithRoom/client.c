@@ -195,9 +195,8 @@ void * downloadFile() {
 
 void * messageReceive() {
 
-    char message[MAX_CHAR] = {0};
-
     while(1) {
+        char message[MAX_CHAR] = {0};
 
         // Le client attend la réponse du serveur
         int recvC = recv(client_socket, message, sizeof(message), 0);
@@ -215,9 +214,8 @@ void * messageReceive() {
 }
 
 void * messageSend() {
-
+    char message[MAX_CHAR];
     while(1) {
-        char message[MAX_CHAR] = {0};
                 
         fgets(message, MAX_CHAR, stdin);
         if(message[strlen(message) - 1] == '\n'){
@@ -287,15 +285,16 @@ void * messageSend() {
                 pthread_create(&threadDownload, NULL, downloadFile, NULL);
             }
             else {
-
-            // Envoie le message au serveur
-            // int send(int dS, const void *m, size_t lg, int flags)
-            // Renvoie le nombre d'octet envoyé si la connexion est réussi et -1 si elle échoue
-            // dS = descripteur de socket
-            // m = message
-            // strlen(m) + 1 = taille du message
-            // 0 = protocole par défaut
-            send(client_socket, message, strlen(message) + 1 , 0);
+                // Envoie le message au serveur
+                // int send(int dS, const void *m, size_t lg, int flags)
+                // Renvoie le nombre d'octet envoyé si la connexion est réussi et -1 si elle échoue
+                // dS = descripteur de socket
+                // m = message
+                // strlen(m) + 1 = taille du message
+                // 0 = protocole par défaut
+                if(send(client_socket, message, strlen(message) + 1 , 0) == -1){
+                    perror("Erreur lors de l'envoi du message");
+                }
             }
         }
     }

@@ -95,6 +95,25 @@ void sendDownload(int dSC);
 // post: Attention, si la création de la room échoue, une erreur est throw
 void sendCreate(char* roomName, int dSC);
 
+// Appelé quand le client envoie n'envoie pas de commande (commande par défaut)
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Attention, si l'envoie du message échoue, une erreur est throw
+void sendRoom(char* msg, int dSC);
 
+// Appelé quand le client envoie la commande "sudo join <roomName>" ou juste après qu'il crée une room
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+void sendJoin(char* roomName, int dSC);
+
+// Appelé quand le client envoie la commande "sudo leave"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+void sendLeave(int dSC);
+
+// Appelé quand lorsque le client rejoins le serveur
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+void sendFirstJoin(int dSC);
 
 #endif

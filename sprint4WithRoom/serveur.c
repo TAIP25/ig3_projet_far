@@ -44,6 +44,22 @@ void initThreadEnd(){
     }
 }
 
+// Initialise la liste des rooms sur le salon par défaut (salon général)
+void initRoomIdList(){
+    for(int i = 0; i < MAX_ROOM; i++){
+        clientList[i].roomId = 0;
+    }
+}
+
+// Initialise la description du salon par défaut
+void initDefaultRoom(){
+    pthread_mutex_lock(&mutexRoom);
+    strcpy(roomList[0].name, "Général");
+    strcpy(roomList[0].description, "Vous entrez dans le salon général, bienvenue !");
+    roomList[0].nbClient = MAX_CLIENT + 1;
+    pthread_mutex_unlock(&mutexRoom);
+}
+
 // Gère la connexion d'un client
 // arg = l'indice du descripteur de socket du client
 void * clientReceive(void* arg){
@@ -51,20 +67,23 @@ void * clientReceive(void* arg){
     int i = (long) arg;
 
     char msg[MAX_CHAR];
-
+    
     char msgWait[MAX_CHAR] = "\033[36m[INFO]\033[0m Vous êtes sorti de la file d'attente, bienvenue sur le serveur\0";
 
     if(send(getDSC(i), msgWait, strlen(msgWait) + 1, 0) == -1){
-        perror("Erreur lors de l'envoie du message");
+        perror("Erreur lors de l'envoie du message msgWait");
         exit(0);
     }
 
     printf("\033[36m[INFO]\033[0m Un client s'est connecté\n");
 
+    // Attend 1 seconde pour que le client reçoive le message car sinon le message n'est pas reçu parfois
+    sleep(1);
+
     char msgPseudo[MAX_CHAR] = "\033[33m[NEED]\033[0m Veuillez entrer votre pseudo: \0";
     
     if(send(getDSC(i), msgPseudo, strlen(msgPseudo) + 1, 0) == -1){
-        perror("Erreur lors de l'envoie du message");
+        perror("Erreur lors de l'envoie du message msgPseudo");
         exit(0);
     }
 
@@ -88,12 +107,15 @@ void * clientReceive(void* arg){
     }
 
     // Envoie un message de bienvenue au client
-    char msgWelcome[MAX_CHAR] = "\033[36m[INFO]\033[0m C'est le début de votre conversation. Pour voir la liste des commandes faites \"sudo help\"";
+    char msgWelcome[MAX_CHAR] = "\033[36m[INFO]\033[0m C'est le début de votre conversation. Pour voir la liste des commandes faites \"sudo help\"\0";
     
     if(send(getDSC(i), msgWelcome, strlen(msgWelcome) + 1, 0) == -1){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
+
+    // Rejoins le salon général
+    sendFirstJoin(getDSC(i));
     
     //TODO mutex
     while (!clientList[i].threadEnd) {
@@ -112,11 +134,9 @@ void * clientReceive(void* arg){
             break;
         }
         else if(recvC == -1){
-            perror("Erreur lors de la réception du message B");
+            perror("Erreur lors de la réception du message dans clientReceive");
             exit(0);
         }
-
-        // printf("\033[36m[INFO]\033[0m Message reçu : %s\n", msg);
 
         // Permet de comparer les chaines de caractères
         // int strncmp(const char *s1, const char *s2, size_t n)
@@ -145,11 +165,17 @@ void * clientReceive(void* arg){
             char* commande = strtok(NULL, " ");
             
             char* arg;
-            if(strncmp(commande, "mp", 2) == 0 || strncmp(commande, "kick", 4) == 0 || strncmp(commande, "rename", 6) == 0){
+            if(
+            strncmp(commande, "mp", 2) == 0 || 
+            strncmp(commande, "kick", 4) == 0 || 
+            strncmp(commande, "rename", 6) == 0 || 
+            strncmp(commande, "create", 6) == 0 || 
+            strncmp(commande, "join", 4) == 0
+            ){
                 arg = strtok(NULL, " ");
                 if(arg == NULL || strcmp(arg, "") == 0){
                     // Avertis le client que la commande est mal formulée
-                    char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m La commande est mal formulée";
+                    char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m La commande est mal formulée\0";
                     send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
                     continue;
                 }
@@ -160,7 +186,7 @@ void * clientReceive(void* arg){
                 message = strtok(NULL, "\0");
                 if(message == NULL || strcmp(message, "") == 0){
                     // Avertis le client que la commande est mal formulée
-                    char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m La commande est mal formulée";
+                    char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m La commande est mal formulée\0";
                     send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
                     continue;
                 }
@@ -225,6 +251,23 @@ void * clientReceive(void* arg){
                 // Envoie un message au client pour lui demander le nom du fichier
                 sendDownload(getDSC(i));
             }
+            // Vérifie si la commande est "sudo create <salon>"
+            else if(strncmp(commande, "create", 6) == 0){
+                // Crée un salon
+                sendCreate(arg, getDSC(i));
+                // Rejoint le salon créé
+                sendJoin(arg, getDSC(i));
+            }
+            // Vérifie si la commande est "sudo join <salon>"
+            else if(strncmp(commande, "join", 4) == 0){
+                // Rejoint un salon
+                sendJoin(arg, getDSC(i));
+            }
+            // Vérifie si la commande est "sudo leave"
+            else if(strncmp(commande, "leave", 5) == 0){
+                // Quitte le salon
+                sendLeave(getDSC(i));
+            }
             else{
                 // Avertis le client que la commande n'existe pas
                 char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m Commande inconnue, tapez \"sudo help\" pour afficher la liste des commandes";
@@ -232,8 +275,8 @@ void * clientReceive(void* arg){
             }
         }
         else{
-            // Envoie le message reçu à tous les clients (commande par défaut)
-            sendAll(msg, getDSC(i));
+            // Envoie le message reçu à tous les clients dans le salon (commande par défaut)
+            sendRoom(msg, getDSC(i));
         }
     }
 
@@ -474,6 +517,12 @@ int main(int argc, char *argv[]) {
 
     // Initialise la liste des threads à 0
     initThreadEnd();
+
+    // Initialise la liste des rooms sur le salon par défaut (salon général)
+    initRoomIdList();
+
+    // Initialise la description du salon par défaut
+    initDefaultRoom();
 
     // Initialise les semaphores
     // int sem_init(sem_t *sem, int pshared, unsigned int value);

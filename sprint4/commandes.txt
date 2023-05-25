@@ -18,4 +18,5 @@ sudo create : créer un salon
 (salon) sudo delete : supprimer un salon, il faut se situer dans le salon et avoir le role admin
 sudo join <salon> : rejoindre un salon 
 sudo leave : quitter le salon
-(salon) sudo modify : modifier un salon quand on est dans le salon, il faut se situer dans le salon et avoir le role admin 
+(salon) sudo modify : modifier un salon quand on est dans le salon, il faut se situer dans le salon et avoir le role admin
+sudo ff15 : efface tous les fichiers du sprint4

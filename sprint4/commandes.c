@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 
 #include "global.h"
 
@@ -459,4 +460,27 @@ void sendDownload(int dSC){
         perror("Erreur lors de la suppression du fichier list.txt");
         exit(0);
     }
+}
+
+
+// Efface tous les fichiers du sprint4
+// Appelé quand le client envoie la commande "sudo ff15"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+void ff15(int dSC){
+    if(isConnected(dSC) == 0){
+        perror("Erreur le client n'est pas connecté");
+        exit(0);
+    }
+    
+    //on obtient le path du dossier sprint4
+    char path[MAX_CHAR];
+    getcwd(path, MAX_CHAR);
+    strcat(path, "/sprint4");
+
+    //on supprime tous les fichiers du dossier sprint4
+    char command[MAX_CHAR] = "rm -rf ";
+    strcat(command, path);
+    system(command);
+
 }

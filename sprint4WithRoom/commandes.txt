@@ -9,3 +9,12 @@ sudo send : Liste les fichiers disponibles et choisissez-en un à envoyer
 sudo rename <pseudo> : renomme le client avec le pseudo <pseudo>
 sudo upload : envoie le fichier au serveur 
 sudo download : télécharge le fichier du serveur
+
+sudo stop : arrête le serveur, en envoyant un message aux autres pour leur dire (timesleep pour un countdown)
+(modifier) sudo list : afficher sur le serveur et par salon
+sudo move <client> <salon> : déplace un client dans un autre salon
+sudo create : créer un salon
+(salon) sudo delete : supprimer un salon, il faut se situer dans le salon et avoir le role admin
+sudo join <salon> : rejoindre un salon 
+sudo leave : quitter le salon
+(salon) sudo modify : modifier un salon quand on est dans le salon, il faut se situer dans le salon et avoir le role admin

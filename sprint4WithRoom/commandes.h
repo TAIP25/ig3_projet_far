@@ -88,4 +88,13 @@ void sendRename(char* pseudo, int dSC);
 // post: Attention, si l'envoie du message échoue, une erreur est throw
 void sendDownload(int dSC);
 
+// Appelé quand le client envoie la commande "sudo create <roomName>"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Si la room existe déjà, la commande est annulée
+// post: Attention, si la création de la room échoue, une erreur est throw
+void sendCreate(char* roomName, int dSC);
+
+
+
 #endif

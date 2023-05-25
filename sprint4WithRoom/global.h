@@ -50,25 +50,27 @@ struct Client {
     pthread_t thread;
     // Booléen indiquant si le thread doit être nettoyé
     int threadEnd;
-};
+} extern clientList[MAX_CLIENT];
 
 // Regroupe les informations d'un salon dans une structure
 // Cette structure est utilisée pour la liste des salons
-// On considère que le salon global est le salon par défaut (salon 0)
 struct Room {
     // Nom du salon
     char name[MAX_PSEUDO];
     // Liste des clients du salon
-    struct Client clientList[MAX_CLIENT];
+    struct Client * clientList[MAX_CLIENT];
     // Nombre de clients dans le salon
     int nbClient;
     // Description du salon
     char description[MAX_CHAR];
-};
+} extern roomList[MAX_ROOM];
 
 // Création d'un mutex pour les variables partagées
 // Il n'y a qu'un seul mutex car toutes les variables partagées étroitement liées
 extern pthread_mutex_t mutex;
+
+// Création d'un mutex pour les variables partagées qui sont liées aux salons
+extern pthread_mutex_t mutexRoom;
 
 // Création d'un sémaphore indiquant le nombre de places restantes sur le serveur
 extern sem_t semaphoreSlot;

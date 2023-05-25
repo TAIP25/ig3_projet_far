@@ -460,3 +460,68 @@ void sendDownload(int dSC){
         exit(0);
     }
 }
+
+// Si la room existe déjà, on renvoie 1 sinon 0
+int isRoom(char* roomName){
+    for(int i = 0; i < MAX_ROOM; i++){
+        if(strcmp(roomList[i].name, roomName) == 0){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// Créé une room
+void createRoom(char* roomName, int nbMaxClient){
+    // On cherche une place libre dans le tableau de room
+    int i = 0;
+    while(roomList[i].nbClient != 0){
+        i++;
+    }
+
+    // On ajoute la room + les informations de la room dans le tableau de room
+    pthread_mutex_lock(&mutexRoom);
+    strcpy(roomList[i].name, roomName);
+    roomList[i].nbClient = nbMaxClient;
+    
+
+    pthread_mutex_unlock(&mutexRoom);
+}
+
+// Appelé quand le client envoie la commande "sudo create <roomName> <nbMaxClient>"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+// post: Si la room existe déjà, la commande est annulée
+// post: Attention, si la création de la room échoue, une erreur est throw
+void sendCreate(char* roomName, int nbMaxClient, int dSC){
+    if(isConnected(dSC) == 0){
+        perror("Erreur le client n'est pas connecté");
+        exit(0);
+    }
+    
+    // On vérifie que la room n'existe pas déjà
+    if(isRoom(roomName) == 1){
+        char create[MAX_CHAR] = "\033[36m[INFO]\033[0m La room existe déjà";
+        if(send(dSC, create, MAX_CHAR, 0) == -1){
+            perror("Erreur lors de l'envoie du message");
+            exit(0);
+        }
+        return;
+    }
+    
+    // On crée la room
+    if(createRoom(roomName, nbMaxClient) == 0){
+        char create[MAX_CHAR] = "\033[36m[INFO]\033[0m La room a été créée";
+        if(send(dSC, create, MAX_CHAR, 0) == -1){
+            perror("Erreur lors de l'envoie du message");
+            exit(0);
+        }
+    }
+    else{
+        char create[MAX_CHAR] = "\033[36m[INFO]\033[0m La room n'a pas pu être créée";
+        if(send(dSC, create, MAX_CHAR, 0) == -1){
+            perror("Erreur lors de l'envoie du message");
+            exit(0);
+        }
+    }
+}

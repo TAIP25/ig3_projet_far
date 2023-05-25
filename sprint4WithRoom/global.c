@@ -7,7 +7,15 @@
 
 #include "global.h"
 
+// Regroupe les informations d'un client dans une structure
+// Cette structure est utilisée pour la liste des clients
+// 
 struct Client clientList[MAX_CLIENT];
+
+
+// Regroupe les informations d'un salon dans une structure
+// Cette structure est utilisée pour la liste des salons
+struct Room roomList[MAX_ROOM];
 
 // Création d'un mutex pour les variables partagées
 // Il n'y a qu'un seul mutex car toutes les variables partagées étroitement liées

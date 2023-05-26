@@ -328,8 +328,6 @@ Gestion propre du signal d’interruption (Ctrl+C) (fait)
 
 6. Possibilité de changer certaines valeurs comme le nombre de clients maximum, le nombre de caractères maximum par message, etc ... dans le fichier **`global.h`**.
 
-7. [WARNING] LA COMMANDE "sudo ff15" N'EST A EFFECTUER QUE POUR LA SOUTENANCE, C'EST UNE COMMANDE JUSTE POUR LE FUN
-
 
 ### Commandes
 

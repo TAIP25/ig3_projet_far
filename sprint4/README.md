@@ -1,16 +1,10 @@
-# Livrable du sprint 3
+# Livrable du sprint 4
 
-v3 : Le serveur donne la possibilité à un client de créer, modifier et supprimer une chaîne de discussion. ( il faudra stocker les salons dans un fichier pour les sauvegarder même après un redémarrage ) (Léon)
-Commande permettant de savoir qui est présent sur le serveur et dans les salons (Léon)
-Commande permettant de déplacer quelqu’un vers un salon (Léon)
-(Commande permettant d’envoyer un message dans tous les salons) (Léon)
-Bonus mettre en place un mots de passe admin pour exécuter des commandes spéciales (kick, stop, delete, move, modify) (Léon)
+## Nouveautées
 
-Censure message (ex :  suppression des insultes) (Wayne)
-Commande ff qui supprime tous les fichiers du sprint 4 (Wayne)
-
-Commande permettant de déconnecter un client en particulier (fait)
-Gestion propre du signal d’interruption (Ctrl+C) (fait)
+Dans ce sprint, nous avons implémenté des salons de discussion: après s'être connecté au serveur, un client peut créer un salon de discussion. 
+Maintenant, un client peut se connecter en tant que "superadmin" s'il connait le password secret. Ceci se fait une fois connecté au serveur. Les superadmins peuvent modifier et effacer des salons en plus de toutes les autres commandes.
+Ajout de nouvelles commandes (se référer au fichier commandes.txt pour voir la liste et description des commandes).
 
 ## Table des matières
 
@@ -293,21 +287,30 @@ sequenceDiagram
 
 ## Difficultés rencontrées
 
-La fin de l'année scolaire étant très proche, il est difficile de gérer plusieurs projets ainsi que les révisions en même temps. La partie la plus dure a été de garder la motivation à travailler au même rythme que précédemment avec une difficulté plus élevée.
+Maintenant que les plus gros examens sont passés, nous avons le temps de se concentrer sur les projets en vue de la soutenance. Ayant jusqu'à la soutenance pour effectuer toutes les modifications que l'on veut, la pression de respecter un délai est moins lourde vu que les fonctionnalités essentielles ont été implémentées dans les sprints précédents.
 
-La partie la plus difficile a été de gérer le conflit entre les différents threads. En effet, cela a créé des problèmes toute bête comme le fait qu'il y avaient 2 fgets qui se lançaient en même temps et donc que le programme attendait 2 entrées au lieu d'une seule. Ou la gestion des noms de fichiers lorsqu'ils existent déjà.
+Ainsi pour ce sprint, la seule difficulté a été de comprendre comment l'implémentation de salons de discussion devait se faire. Une fois partis, nous n'avons pas eu d'obstacles importants.
 
 ## Répartition du travail
 
-Tout d'abord avant de coder, nous avons décidé en amont comment chaque étape clé devrait être traitée pour donner des indications claires à chacun de nous. Vu que le travail en parallèle a bien fonctionné le dernier sprint, nous sommes restés sur la même optique.
-Puis la répartition du travail s'est faite de manière à pouvoir travailler continuellement sur un même aspect du projet et à pouvoir respecter les délais imposés.
-Pour ce sprint, nous avons décidé de passer directement à la v2. 
+Tout d'abord avant de coder, nous avons décidé en amont comment chaque étape clé devrait être traitée pour donner des indications claires à chacun de nous. Vu que le travail en parallèle a bien fonctionné tout au long du projet, donc nous sommes restés sur la même optique. Puis la répartition du travail s'est faite de manière à pouvoir travailler continuellement en parallèle afin de finir le code le plus tot possible pour bien préparer la soutenance. Pour cette partie, nous sommes directement passés à la v3.
 
-Maintenant que des modifications doivent être apportées côté serveur et côté client, Wayne est retourné sur sa partie préférée (le client) et a laissé Léon briller sur sa partie de prédilection (le serveur). Wayne s'est occupé de la gestion l'ouverture/fermeture de la connexion, de la commande pour upload/download d'un fichier (qui sont les seules commandes qui sont gérées côté client) ainsi que l'affichage des fichiers disponibles dans le dossier spécifique à chaque client. 
+Pour ce sprint Wayne est resté sur la partie client et Léon sur la partie serveur. Wayne s'est occupé de la censure de messages d'insultes ainsi que l'implémentation des nouvelles commandes. Léon s'est occupé de la création des salons ainsi que les commandes concernant le salon: modifier, supprimer, move, role admin.
 
-Léon s'est occupé de la même chose mais côté serveur, la seule petite différence c'est que le client ferme la connexion après avoir upload/download un fichier alors que le serveur reste en écoute pour d'autres clients à la fin de l'upload/download d'un fichier.
+Il a été primordial de travailler l'un a coté de l'autre pour ne pas avoir de blocage et avancer plus rapidement. Une fois que le code a été fait, nous avons fait des test chacun de notre coté pour vérifier qu'il n'y ait aucun problème.
 
-Bien sûr, pour les modifications hors des fichiers client et serveur, il n'y a pas de personne assigné à cela, par exemple pour rajouter une commande dans la liste. Comme d'habitude, travailler l'un a côté de l'autre reste notre méthode de travail la plus efficace. Enfin, nous avons fait des tests chacun de notre côté pour les améliorations possibles.
+v3 : Le serveur donne la possibilité à un client de créer, modifier et supprimer une chaîne de discussion. ( il faudra stocker les salons dans un fichier pour les sauvegarder même après un redémarrage ) (Léon)
+Commande permettant de savoir qui est présent sur le serveur et dans les salons (Léon)
+Commande permettant de déplacer quelqu’un vers un salon (Léon)
+(Commande permettant d’envoyer un message dans tous les salons) (Léon)
+Bonus mettre en place un mots de passe admin pour exécuter des commandes spéciales (kick, stop, delete, move, modify) (Léon)
+
+Censure message (ex :  suppression des insultes) (Wayne)
+Commande ff qui supprime tous les fichiers du sprint 4 (Wayne)
+
+Commande permettant de déconnecter un client en particulier (fait)
+Gestion propre du signal d’interruption (Ctrl+C) (fait)
+
 
 ## Compilation et exécution
 
@@ -324,6 +327,8 @@ Bien sûr, pour les modifications hors des fichiers client et serveur, il n'y a 
 5. En local, l'adresse IP du serveur est 127.0.0.1
 
 6. Possibilité de changer certaines valeurs comme le nombre de clients maximum, le nombre de caractères maximum par message, etc ... dans le fichier **`global.h`**.
+
+7. [WARNING] LA COMMANDE "sudo ff15" N'EST A EFFECTUER QUE POUR LA SOUTENANCE, C'EST UNE COMMANDE JUSTE POUR LE FUN
 
 
 ### Commandes

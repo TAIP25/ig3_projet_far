@@ -68,21 +68,18 @@ void * clientReceive(void* arg){
 
     char msg[MAX_CHAR];
     
-    char msgWait[MAX_CHAR] = "\033[36m[INFO]\033[0m Vous êtes sorti de la file d'attente, bienvenue sur le serveur\0";
+    char msgWait[MAX_CHAR] = "\033[36m[INFO]\033[0m Vous êtes sorti de la file d'attente, bienvenue sur le serveur";
 
-    if(send(getDSC(i), msgWait, strlen(msgWait) + 1, 0) == -1){
+    if(send(getDSC(i), msgWait, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message msgWait");
         exit(0);
     }
 
     printf("\033[36m[INFO]\033[0m Un client s'est connecté\n");
 
-    // Attend 1 seconde pour que le client reçoive le message car sinon le message n'est pas reçu parfois
-    sleep(1);
-
-    char msgPseudo[MAX_CHAR] = "\033[33m[NEED]\033[0m Veuillez entrer votre pseudo: \0";
+    char msgPseudo[MAX_CHAR] = "\033[33m[NEED]\033[0m Veuillez entrer votre pseudo: ";
     
-    if(send(getDSC(i), msgPseudo, strlen(msgPseudo) + 1, 0) == -1){
+    if(send(getDSC(i), msgPseudo, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message msgPseudo");
         exit(0);
     }
@@ -107,9 +104,9 @@ void * clientReceive(void* arg){
     }
 
     // Envoie un message de bienvenue au client
-    char msgWelcome[MAX_CHAR] = "\033[36m[INFO]\033[0m C'est le début de votre conversation. Pour voir la liste des commandes faites \"sudo help\"\0";
+    char msgWelcome[MAX_CHAR] = "\033[36m[INFO]\033[0m C'est le début de votre conversation. Pour voir la liste des commandes faites \"sudo help\"";
     
-    if(send(getDSC(i), msgWelcome, strlen(msgWelcome) + 1, 0) == -1){
+    if(send(getDSC(i), msgWelcome, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
@@ -166,11 +163,11 @@ void * clientReceive(void* arg){
             
             char* arg;
             if(
-            strncmp(commande, "mp", 2) == 0 || 
-            strncmp(commande, "kick", 4) == 0 || 
-            strncmp(commande, "rename", 6) == 0 || 
-            strncmp(commande, "create", 6) == 0 || 
-            strncmp(commande, "join", 4) == 0
+                strncmp(commande, "mp", 2) == 0 || 
+                strncmp(commande, "kick", 4) == 0 || 
+                strncmp(commande, "rename", 6) == 0 || 
+                strncmp(commande, "create", 6) == 0 || 
+                strncmp(commande, "join", 4) == 0
             ){
                 arg = strtok(NULL, " ");
                 if(arg == NULL || strcmp(arg, "") == 0){
@@ -199,14 +196,18 @@ void * clientReceive(void* arg){
             }
             // Vérifie si la commande est "sudo mp <pseudo> <msg>"
             else if(strncmp(commande, "mp", 2) == 0){
-                if(getDSCByPseudo(arg) == -1){
-                    // Avertis le client que le client <pseudo> n'existe pas
-                    char errorMsg[MAX_CHAR] = "Le client n'existe pas";
-                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
+                // On vérifie que le client qui se fait kick est bien connecté
+                int idR = getIDByPseudo(arg);
+                if(idR == -1){
+                    char join[MAX_CHAR] = "\033[41m[ERROR]\033[0m Le client n'existe pas";
+                    if(send(getDSC(i), join, MAX_CHAR, 0) == -1){
+                        perror("Erreur lors de l'envoie du message");
+                        exit(0);
+                    }
                     continue;
                 }
                 // Envoie le message au client <pseudo>
-                sendMP(message, i, getDSCByPseudo(arg)); 
+                sendMP(message, i, idR);
             }
             // Vérifie si la commande est "sudo help"
             else if(strncmp(commande, "help", 4) == 0){
@@ -225,21 +226,18 @@ void * clientReceive(void* arg){
             }
             // Vérifie si la commande est "sudo kick <pseudo>"
             else if(strncmp(commande, "kick", 4) == 0){
-                if(getDSCByPseudo(arg) == -1){
-                    // Avertis le client que le client <pseudo> n'existe pas
-                    char errorMsg[MAX_CHAR] = "Le client n'existe pas";
-                    /* TODO
-                    char needPassword[MAX_CHAR] = "Veuillez entrer le mot de passe administrateur";
-                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0);
-                    recv(getDSC(i), msg, sizeof(msg), 0);
-                    strcmp(msg, "admin") == 0 ? send(getDSC(i), needPassword, strlen(needPassword) + 1, 0) :
-                    */
-                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0);
+                // On vérifie que le client qui se fait kick est bien connecté
+                int idR = getIDByPseudo(arg);
+                if(idR == -1){
+                    char join[MAX_CHAR] = "\033[41m[ERROR]\033[0m Le client n'existe pas";
+                    if(send(getDSC(i), join, MAX_CHAR, 0) == -1){
+                        perror("Erreur lors de l'envoie du message");
+                        exit(0);
+                    }
+                    continue;
                 }
-                else{
-                    // Envoie un message de déconnexion au client <pseudo>
-                    sendKick(i, getDSCByPseudo(arg));   
-                }
+                // Envoie un message de déconnexion au client <pseudo>
+                sendKick(i, idR);
             }
             // Vérifie si la commande est "sudo rename <pseudo>"
             else if(strncmp(commande, "rename", 6) == 0){

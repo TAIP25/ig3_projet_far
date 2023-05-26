@@ -38,16 +38,15 @@
 
 // Regroupe les informations d'un salon dans une structure
 // Cette structure est utilisée pour la liste des salons
-// On considère que le premier salon est le salon général (c'est pour cela que l'on a MAX_ROOM + 1)
 struct Room {
     // Nom du salon
     char name[MAX_PSEUDO];
     // Nombre de clients maximum dans le salon
+    // 0 signifie que la room n'est pas utiliséePRO
     int nbClient;
     // Description du salon
     char description[MAX_DESCRIPTION];
-} extern roomList[MAX_ROOM + 1];
-
+} extern roomList[MAX_ROOM + 1]; // On considère que le premier salon est le salon général (c'est pour cela que l'on a MAX_ROOM + 1)
 
 // Regroupe les informations d'un client dans une structure
 // Cette structure est utilisée pour la liste des clients
@@ -68,6 +67,8 @@ struct Client {
     int threadEnd;
     // La room id dans laquelle se trouve le client
     int roomId;
+    // Booléen indiquant si le client est super admin
+    int isSuperAdmin;
 } extern clientList[MAX_CLIENT];
 
 // Création d'un mutex pour les variables partagées

@@ -26,9 +26,15 @@ int getId(int dSC);
 // post: Attention, si le client n'est pas connecté, une erreur est throw
 char* getPseudoByDSC(int dSC);
 
+// Recupère le ID du client à partir de son pseudo
+// pre: isConnected(dSC) == 1
+// post: getID(getDSCByPseudo(pseudo)) == getIDByPseudo(pseudo) == id
+// post: Attention, si le client n'est pas connecté => return -1
+int getIDByPseudo(char* pseudo);
+
 // Recupère le dSC du client à partir de son pseudo
 // pre: isConnected(dSC) == 1
-// post: getDSC(pseudo) == dSC
+// post: getDSC(getIDByPseudo(pseudo)) == getDSCByPseudo(pseudo) == dSC
 // post: Attention, si le client n'est pas connecté => return -1
 int getDSCByPseudo(char* pseudo);
 
@@ -115,5 +121,20 @@ void sendLeave(int dSC);
 // pre: isConnected(dSC) == 1
 // post: Attention, si le client n'est pas connecté, une erreur est throw
 void sendFirstJoin(int dSC);
+
+// Appelé quand le client envoie la commande "sudo delete <roomName>"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+void sendDelete(char* roomName, int dSC);
+
+// Appelé quand le client envoie la commande "sudo move <roomName> <pseudo>"
+// pre: isConnected(dSCS) && isConnected(dSCR) == 1
+// post: Attention, si l'un des clients n'est pas connecté, une erreur est throw
+void sendMove(char* roomName, int dSCS, int dSCR);
+
+// Appelé quand le client envoie la commande "sudo superadmin <password>"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+void sendSuperAdmin(char* password, int dSC);
 
 #endif

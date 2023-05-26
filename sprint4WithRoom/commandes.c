@@ -82,16 +82,33 @@ char* getPseudoByDSC(int dSC){
     return pseudo;
 }
 
-// Recupère le dSC du client à partir de son pseudo
+// Recupère le ID du client à partir de son pseudo
 // pre: isConnected(dSC) == 1
-// post: getDSC(pseudo) == dSC
+// post: getID(getDSCByPseudo(pseudo)) == getIDByPseudo(pseudo) == id
 // post: Attention, si le client n'est pas connecté => return -1
-int getDSCByPseudo(char* pseudo){
+int getIDByPseudo(char* pseudo){
     pthread_mutex_lock(&mutex);
     for(int i = 0; i < MAX_CLIENT; i++){
         if(strcmp(clientList[i].pseudo, pseudo) == 0){
             pthread_mutex_unlock(&mutex);
             return i;
+        }
+    }
+    pthread_mutex_unlock(&mutex);
+    return -1;
+}
+
+// Recupère le dSC du client à partir de son pseudo
+// pre: isConnected(dSC) == 1
+// post: getDSC(getIDByPseudo(pseudo)) == getDSCByPseudo(pseudo) == dSC
+// post: Attention, si le client n'est pas connecté => return -1
+int getDSCByPseudo(char* pseudo){
+    pthread_mutex_lock(&mutex);
+    for(int i = 0; i < MAX_CLIENT; i++){
+        if(strcmp(clientList[i].pseudo, pseudo) == 0){
+            int result = clientList[i].connection.dSC;
+            pthread_mutex_unlock(&mutex);
+            return result;
         }
     }
     pthread_mutex_unlock(&mutex);
@@ -145,7 +162,7 @@ void sendMP(char* msg, int idS, int idR){
     }
 
     // Envoie un message au client idR
-    char infoMsg[MAX_CHAR] = "\033[34m[MP]\033[0m ";
+    char infoMsg[MAX_CHAR] = "\033[32m[MP]\033[0m ";
     strcat(infoMsg, getPseudoByDSC(getDSC(idS)));
     strcat(infoMsg, ": ");
     strcat(infoMsg, msg);
@@ -718,12 +735,118 @@ void sendFirstJoin(int dSC){
     pthread_mutex_unlock(&mutex);
 
     // On envoie la description de la room au client
-    char description[MAX_CHAR] = {0};
+    char description[MAX_CHAR] = "\033[34m[ROOM]\033[0m Description: ";
     pthread_mutex_lock(&mutexRoom);
-    sprintf(description, "\033[34m[ROOM]\033[0m Description: %s", roomList[0].description);
+    strcat(description, roomList[0].description);
     pthread_mutex_unlock(&mutexRoom);
+    // Le strcpy est nécessaire car sinon le message n'est pas envoyé
+    //printf("%s\n", description);
     if(send(dSC, description, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message dans sendFirstJoin");
         exit(0);
     }
+}
+
+// Appelé quand le client envoie la commande "sudo delete <roomName>"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+void sendDelete(char* roomName, int dSC){
+    if(isConnected(dSC) == 0){
+        perror("Erreur le client n'est pas connecté");
+        exit(0);
+    }
+
+    // On vérifie que la room existe
+    if(isRoom(roomName) == 0){
+        char join[MAX_CHAR] = "\033[41m[ERROR]\033[0m La room n'existe pas";
+        if(send(dSC, join, MAX_CHAR, 0) == -1){
+            perror("Erreur lors de l'envoie du message");
+            exit(0);
+        }
+        return;
+    }
+
+    // On vérifie que le client a bien les super pouvoirs
+    int id = getID(dSC);
+    pthread_mutex_lock(&mutex);
+    if(clientList[id].isSuperAdmin == 0){
+        char join[MAX_CHAR] = "\033[41m[ERROR]\033[0m Vous n'avez pas les droits pour supprimer une room";
+        if(send(dSC, join, MAX_CHAR, 0) == -1){
+            perror("Erreur lors de l'envoie du message");
+            exit(0);
+        }
+        pthread_mutex_unlock(&mutex);
+        return;
+    }
+    pthread_mutex_unlock(&mutex);
+
+    // On fait leave tous les clients de la room
+    pthread_mutex_lock(&mutex);
+    int roomId = clientList[id].roomId;
+    pthread_mutex_unlock(&mutex);
+    for(int i = 0; i < MAX_CLIENT; i++){
+        if(roomId == getRoomId(roomName)){
+            char messageDelete[MAX_CHAR] = "\033[36m[INFO]\033[0m La room a été supprimée, vous revenez dans le salon principal";
+            sendJoin(0, i);
+        }
+    }
+
+    // On "supprime" la room
+    pthread_mutex_lock(&mutexRoom);
+    roomList[roomId].nbClient = 0;
+    pthread_mutex_unlock(&mutexRoom);
+
+    // On envoie un message de confirmation au client
+    char join[MAX_CHAR] = "\033[36m[INFO]\033[0m La room a été supprimée";
+    if(send(dSC, join, MAX_CHAR, 0) == -1){
+        perror("Erreur lors de l'envoie du message");
+        exit(0);
+    }
+}
+
+// Appelé quand le client envoie la commande "sudo move <roomName> <pseudo>"
+// pre: isConnected(dSCS) && isConnected(dSCR) == 1
+// post: Attention, si l'un des clients n'est pas connecté, une erreur est throw
+void sendMove(char* roomName, int dSCS, int dSCR){
+    if(isConnected(dSCS) == 0 || isConnected(dSCR) == 0){
+        perror("Erreur le client n'est pas connecté");
+        exit(0);
+    }
+
+    // On vérifie que le client a bien les super pouvoirs
+    int idS = getID(dSCS);
+    pthread_mutex_lock(&mutex);
+    if(clientList[idS].isSuperAdmin == 0){
+        char join[MAX_CHAR] = "\033[41m[ERROR]\033[0m Vous n'avez pas les droits pour déplacer un client";
+        if(send(dSCS, join, MAX_CHAR, 0) == -1){
+            perror("Erreur lors de l'envoie du message");
+            exit(0);
+        }
+        pthread_mutex_unlock(&mutex);
+        return;
+    }
+    pthread_mutex_unlock(&mutex);
+
+    // On vérifie que la room existe
+    if(isRoom(roomName) == 0){
+        char join[MAX_CHAR] = "\033[41m[ERROR]\033[0m La room n'existe pas";
+        if(send(dSCS, join, MAX_CHAR, 0) == -1){
+            perror("Erreur lors de l'envoie du message");
+            exit(0);
+        }
+        return;
+    }
+
+
+    
+
+
+
+}
+
+// Appelé quand le client envoie la commande "sudo superadmin <password>"
+// pre: isConnected(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+void sendSuperAdmin(char* password, int dSC){
+    return;
 }

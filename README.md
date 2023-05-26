@@ -1,6 +1,9 @@
-# ig3_projet_far
+# Livrable du projet far 2022-2023: Application de messagerie intantanée
 
 Voici le projet far de **Léon BOUDIER et Wayne WAN CHOW WAH**. Ce projet utilise actuellement le **TCP**.
+
+## Table des matières
+
 
 ## Prérequis
 

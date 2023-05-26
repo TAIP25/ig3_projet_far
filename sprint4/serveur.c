@@ -44,6 +44,22 @@ void initThreadEnd(){
     }
 }
 
+// Initialise la liste des rooms sur le salon par défaut (salon général)
+void initRoomIdList(){
+    for(int i = 0; i < MAX_ROOM; i++){
+        clientList[i].roomId = 0;
+    }
+}
+
+// Initialise la description du salon par défaut
+void initDefaultRoom(){
+    pthread_mutex_lock(&mutexRoom);
+    strcpy(roomList[0].name, "Général");
+    strcpy(roomList[0].description, "Vous entrez dans le salon général, bienvenue !");
+    roomList[0].nbClient = MAX_CLIENT + 1;
+    pthread_mutex_unlock(&mutexRoom);
+}
+
 // Gère la connexion d'un client
 // arg = l'indice du descripteur de socket du client
 void * clientReceive(void* arg){
@@ -51,20 +67,20 @@ void * clientReceive(void* arg){
     int i = (long) arg;
 
     char msg[MAX_CHAR];
+    
+    char msgWait[MAX_CHAR] = "\033[36m[INFO]\033[0m Vous êtes sorti de la file d'attente, bienvenue sur le serveur";
 
-    char msgWait[MAX_CHAR] = "\033[36m[INFO]\033[0m Vous êtes sorti de la file d'attente, bienvenue sur le serveur\0";
-
-    if(send(getDSC(i), msgWait, strlen(msgWait) + 1, 0) == -1){
-        perror("Erreur lors de l'envoie du message");
+    if(send(getDSC(i), msgWait, MAX_CHAR, 0) == -1){
+        perror("Erreur lors de l'envoie du message msgWait");
         exit(0);
     }
 
     printf("\033[36m[INFO]\033[0m Un client s'est connecté\n");
 
-    char msgPseudo[MAX_CHAR] = "\033[33m[NEED]\033[0m Veuillez entrer votre pseudo: \0";
+    char msgPseudo[MAX_CHAR] = "\033[33m[NEED]\033[0m Veuillez entrer votre pseudo: ";
     
-    if(send(getDSC(i), msgPseudo, strlen(msgPseudo) + 1, 0) == -1){
-        perror("Erreur lors de l'envoie du message");
+    if(send(getDSC(i), msgPseudo, MAX_CHAR, 0) == -1){
+        perror("Erreur lors de l'envoie du message msgPseudo");
         exit(0);
     }
 
@@ -90,10 +106,13 @@ void * clientReceive(void* arg){
     // Envoie un message de bienvenue au client
     char msgWelcome[MAX_CHAR] = "\033[36m[INFO]\033[0m C'est le début de votre conversation. Pour voir la liste des commandes faites \"sudo help\"";
     
-    if(send(getDSC(i), msgWelcome, strlen(msgWelcome) + 1, 0) == -1){
+    if(send(getDSC(i), msgWelcome, MAX_CHAR, 0) == -1){
         perror("Erreur lors de l'envoie du message");
         exit(0);
     }
+
+    // Rejoins le salon général
+    sendFirstJoin(getDSC(i));
     
     //TODO mutex
     while (!clientList[i].threadEnd) {
@@ -112,11 +131,9 @@ void * clientReceive(void* arg){
             break;
         }
         else if(recvC == -1){
-            perror("Erreur lors de la réception du message B");
+            perror("Erreur lors de la réception du message dans clientReceive");
             exit(0);
         }
-
-        // printf("\033[36m[INFO]\033[0m Message reçu : %s\n", msg);
 
         // Permet de comparer les chaines de caractères
         // int strncmp(const char *s1, const char *s2, size_t n)
@@ -145,11 +162,17 @@ void * clientReceive(void* arg){
             char* commande = strtok(NULL, " ");
             
             char* arg;
-            if(strncmp(commande, "mp", 2) == 0 || strncmp(commande, "kick", 4) == 0 || strncmp(commande, "rename", 6) == 0){
+            if(
+                strncmp(commande, "mp", 2) == 0 || 
+                strncmp(commande, "kick", 4) == 0 || 
+                strncmp(commande, "rename", 6) == 0 || 
+                strncmp(commande, "create", 6) == 0 || 
+                strncmp(commande, "join", 4) == 0
+            ){
                 arg = strtok(NULL, " ");
                 if(arg == NULL || strcmp(arg, "") == 0){
                     // Avertis le client que la commande est mal formulée
-                    char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m La commande est mal formulée";
+                    char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m La commande est mal formulée\0";
                     send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
                     continue;
                 }
@@ -160,7 +183,7 @@ void * clientReceive(void* arg){
                 message = strtok(NULL, "\0");
                 if(message == NULL || strcmp(message, "") == 0){
                     // Avertis le client que la commande est mal formulée
-                    char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m La commande est mal formulée";
+                    char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m La commande est mal formulée\0";
                     send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
                     continue;
                 }
@@ -173,14 +196,18 @@ void * clientReceive(void* arg){
             }
             // Vérifie si la commande est "sudo mp <pseudo> <msg>"
             else if(strncmp(commande, "mp", 2) == 0){
-                if(getDSCByPseudo(arg) == -1){
-                    // Avertis le client que le client <pseudo> n'existe pas
-                    char errorMsg[MAX_CHAR] = "Le client n'existe pas";
-                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
+                // On vérifie que le client qui se fait kick est bien connecté
+                int idR = getIDByPseudo(arg);
+                if(idR == -1){
+                    char join[MAX_CHAR] = "\033[41m[ERROR]\033[0m Le client n'existe pas";
+                    if(send(getDSC(i), join, MAX_CHAR, 0) == -1){
+                        perror("Erreur lors de l'envoie du message");
+                        exit(0);
+                    }
                     continue;
                 }
                 // Envoie le message au client <pseudo>
-                sendMP(message, i, getDSCByPseudo(arg)); 
+                sendMP(message, i, idR);
             }
             // Vérifie si la commande est "sudo help"
             else if(strncmp(commande, "help", 4) == 0){
@@ -199,21 +226,18 @@ void * clientReceive(void* arg){
             }
             // Vérifie si la commande est "sudo kick <pseudo>"
             else if(strncmp(commande, "kick", 4) == 0){
-                if(getDSCByPseudo(arg) == -1){
-                    // Avertis le client que le client <pseudo> n'existe pas
-                    char errorMsg[MAX_CHAR] = "Le client n'existe pas";
-                    /* TODO
-                    char needPassword[MAX_CHAR] = "Veuillez entrer le mot de passe administrateur";
-                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0);
-                    recv(getDSC(i), msg, sizeof(msg), 0);
-                    strcmp(msg, "admin") == 0 ? send(getDSC(i), needPassword, strlen(needPassword) + 1, 0) :
-                    */
-                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0);
+                // On vérifie que le client qui se fait kick est bien connecté
+                int idR = getIDByPseudo(arg);
+                if(idR == -1){
+                    char join[MAX_CHAR] = "\033[41m[ERROR]\033[0m Le client n'existe pas";
+                    if(send(getDSC(i), join, MAX_CHAR, 0) == -1){
+                        perror("Erreur lors de l'envoie du message");
+                        exit(0);
+                    }
+                    continue;
                 }
-                else{
-                    // Envoie un message de déconnexion au client <pseudo>
-                    sendKick(i, getDSCByPseudo(arg));   
-                }
+                // Envoie un message de déconnexion au client <pseudo>
+                sendKick(i, idR);
             }
             // Vérifie si la commande est "sudo rename <pseudo>"
             else if(strncmp(commande, "rename", 6) == 0){
@@ -229,6 +253,23 @@ void * clientReceive(void* arg){
             else if(strncmp(commande, "ff15", 4) == 0){
                 ff15(getDSC(i));
             }
+            // Vérifie si la commande est "sudo create <salon>"
+            else if(strncmp(commande, "create", 6) == 0){
+                // Crée un salon
+                sendCreate(arg, getDSC(i));
+                // Rejoint le salon créé
+                sendJoin(arg, getDSC(i));
+            }
+            // Vérifie si la commande est "sudo join <salon>"
+            else if(strncmp(commande, "join", 4) == 0){
+                // Rejoint un salon
+                sendJoin(arg, getDSC(i));
+            }
+            // Vérifie si la commande est "sudo leave"
+            else if(strncmp(commande, "leave", 5) == 0){
+                // Quitte le salon
+                sendLeave(getDSC(i));
+            }
             else{
                 // Avertis le client que la commande n'existe pas
                 char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m Commande inconnue, tapez \"sudo help\" pour afficher la liste des commandes";
@@ -236,8 +277,8 @@ void * clientReceive(void* arg){
             }
         }
         else{
-            // Envoie le message reçu à tous les clients (commande par défaut)
-            sendAll(msg, getDSC(i));
+            // Envoie le message reçu à tous les clients dans le salon (commande par défaut)
+            sendRoom(msg, getDSC(i));
         }
     }
 
@@ -478,6 +519,12 @@ int main(int argc, char *argv[]) {
 
     // Initialise la liste des threads à 0
     initThreadEnd();
+
+    // Initialise la liste des rooms sur le salon par défaut (salon général)
+    initRoomIdList();
+
+    // Initialise la description du salon par défaut
+    initDefaultRoom();
 
     // Initialise les semaphores
     // int sem_init(sem_t *sem, int pshared, unsigned int value);

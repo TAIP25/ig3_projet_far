@@ -24,6 +24,9 @@
 // Nombre de salons maximum
 #define MAX_ROOM 10
 
+// Taille maximale d'une description de salon
+#define MAX_DESCRIPTION 255
+
 // Definie le mot de passe admin qui permet d'utiliser les commandes admin comme kick, stop, delete, move, modify
 #define PASSWORD "password"
 
@@ -32,6 +35,18 @@
 
 // Chemin du dossier de transfert du serveur
 #define SERVER_TRANSFER_FOLDER "transferServeur/"
+
+// Regroupe les informations d'un salon dans une structure
+// Cette structure est utilisée pour la liste des salons
+struct Room {
+    // Nom du salon
+    char name[MAX_PSEUDO];
+    // Nombre de clients maximum dans le salon
+    // 0 signifie que la room n'est pas utiliséePRO
+    int nbClient;
+    // Description du salon
+    char description[MAX_DESCRIPTION];
+} extern roomList[MAX_ROOM + 1]; // On considère que le premier salon est le salon général (c'est pour cela que l'on a MAX_ROOM + 1)
 
 // Regroupe les informations d'un client dans une structure
 // Cette structure est utilisée pour la liste des clients
@@ -50,27 +65,18 @@ struct Client {
     pthread_t thread;
     // Booléen indiquant si le thread doit être nettoyé
     int threadEnd;
+    // La room id dans laquelle se trouve le client
+    int roomId;
+    // Booléen indiquant si le client est super admin
+    int isSuperAdmin;
 } extern clientList[MAX_CLIENT];
-
-// Regroupe les informations d'un salon dans une structure
-// Cette structure est utilisée pour la liste des salons
-// On considère que le salon global est le salon par défaut (salon 0)
-/*
-struct Room {
-    // Nom du salon
-    char name[MAX_PSEUDO];
-    // Liste des clients du salon
-    struct Client clientList[MAX_CLIENT];
-    // Nombre de clients dans le salon
-    int nbClient;
-    // Description du salon
-    char description[MAX_CHAR];
-};
-*/
 
 // Création d'un mutex pour les variables partagées
 // Il n'y a qu'un seul mutex car toutes les variables partagées étroitement liées
 extern pthread_mutex_t mutex;
+
+// Création d'un mutex pour les variables partagées qui sont liées aux salons
+extern pthread_mutex_t mutexRoom;
 
 // Création d'un sémaphore indiquant le nombre de places restantes sur le serveur
 extern sem_t semaphoreSlot;

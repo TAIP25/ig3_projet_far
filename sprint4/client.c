@@ -20,6 +20,32 @@ int download_socket;
 //Nom du fichier lors de l'upload ou du download
 char filename[MAX_CHAR];
 
+// Vérifie si le message contient une insulte
+void checkInsulte(char *message){
+
+    // Les insultes sont stockées dans le fichier insultes.txt
+    FILE* file = fopen("insultes.txt", "r");
+    if(file == NULL){
+        perror("Erreur lors de l'ouverture du fichier insultes.txt");
+        exit(0);
+    }
+
+    char line[MAX_CHAR];
+    while(fgets(line, MAX_CHAR, file) != NULL){
+        // On enlève le \n à la fin de la ligne
+        line[strlen(line) - 1] = '\0';
+
+        // Si le message contient une insulte on la remplace par des *
+        if(strstr(message, line) != NULL){
+            char *ptr = strstr(message, line);
+            for(int i = 0; i < strlen(line); i++){
+                ptr[i] = '*';
+            }
+        }
+    }
+    fclose(file);
+}
+
 void * uploadFile() {
 
     // Création de la socket
@@ -193,39 +219,10 @@ void * downloadFile() {
     pthread_exit(0);
 }
 
-//check si le message contient une insulte
-//en cas d'insulte, on remplace le message par des * de la taille du mot
-//fait le check apres chaque mot quand un \0 est détecté
-//liste des insultes dans insultes.txt
-void checkInsulte(char *message){
-    FILE* file = fopen("insultes.txt", "r");
-    if(file == NULL){
-        perror("Erreur lors de l'ouverture du fichier insultes.txt");
-        exit(0);
-    }
-
-    char line[MAX_CHAR];
-    while(fgets(line, MAX_CHAR, file) != NULL){
-        //On enlève le \n à la fin de la ligne
-        line[strlen(line) - 1] = '\0';
-
-        //si le message contient une insulte
-        if(strstr(message, line) != NULL){
-            //on remplace le mot par des *
-            char *ptr = strstr(message, line);
-            for(int i = 0; i < strlen(line); i++){
-                ptr[i] = '*';
-            }
-        }
-    }
-    fclose(file);
-}
-
 void * messageReceive() {
 
-    char message[MAX_CHAR] = {0};
-
     while(1) {
+        char message[MAX_CHAR] = {0};
 
         // Le client attend la réponse du serveur
         int recvC = recv(client_socket, message, sizeof(message), 0);
@@ -243,9 +240,8 @@ void * messageReceive() {
 }
 
 void * messageSend() {
-
+    char message[MAX_CHAR];
     while(1) {
-        char message[MAX_CHAR] = {0};
                 
         fgets(message, MAX_CHAR, stdin);
         if(message[strlen(message) - 1] == '\n'){
@@ -256,14 +252,13 @@ void * messageSend() {
             printf("\033[41m[ERROR]\033[0m Erreur message trop grand\n");
         }
         else{
+            
+            // On vérifie si le message contient une insulte et on la remplace par des *
+            checkInsulte(message); 
 
-            //on check si le message contient une insulte
-            checkInsulte(message);
-
-            //sudo upload
             if (strcmp(message, "sudo upload") == 0) {
                 
-                //affiche la liste des fichiers qu'il y a dans le dossier spécifié pour le client
+                //Affiche la liste des fichiers qu'il y a dans le dossier spécifié pour le client
                 printf("\033[36m[INFO]\033[0m Liste des fichiers dans le dossier spécifié pour le client:\n");
                 
                 //On affiche la liste des fichiers dans le dossier spécifié
@@ -318,15 +313,16 @@ void * messageSend() {
                 pthread_create(&threadDownload, NULL, downloadFile, NULL);
             }
             else {
-
-            // Envoie le message au serveur
-            // int send(int dS, const void *m, size_t lg, int flags)
-            // Renvoie le nombre d'octet envoyé si la connexion est réussi et -1 si elle échoue
-            // dS = descripteur de socket
-            // m = message
-            // strlen(m) + 1 = taille du message
-            // 0 = protocole par défaut
-            send(client_socket, message, strlen(message) + 1 , 0);
+                // Envoie le message au serveur
+                // int send(int dS, const void *m, size_t lg, int flags)
+                // Renvoie le nombre d'octet envoyé si la connexion est réussi et -1 si elle échoue
+                // dS = descripteur de socket
+                // m = message
+                // strlen(m) + 1 = taille du message
+                // 0 = protocole par défaut
+                if(send(client_socket, message, strlen(message) + 1 , 0) == -1){
+                    perror("Erreur lors de l'envoi du message");
+                }
             }
         }
     }

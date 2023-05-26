@@ -1,23 +1,21 @@
-Liste des commandes disponibles :
+Liste des commandes disponibles pour le client:
 sudo help : affiche la liste des commandes disponibles
-sudo all <msg> : envoie un message à tous les clients connectés (par défaut)
 sudo mp <pseudo> <msg> : envoie un message privé au client <pseudo>
 sudo quit : déconnecte le client du serveur
-sudo list : affiche la liste des clients connectés (id : pseudo)
-sudo kick <pseudo> : déconnecte le client <pseudo> du serveur
-sudo send : Liste les fichiers disponibles et choisissez-en un à envoyer
-sudo rename <pseudo> : renomme le client avec le pseudo <pseudo>
+(modifier) sudo list : afficher les clients connectés sur le serveur et par salon
+(modifier) sudo kick <pseudo> : déconnecte le client <pseudo> du serveur
+sudo rename <pseudo> : renomme le client
 sudo upload : envoie le fichier au serveur 
 sudo download : télécharge le fichier du serveur
-sudo stop : arrête le serveur, en envoyant un message aux autres pour leur dire (timesleep pour un countdown)
-sudo move <client> <salon> : déplace un client dans un autre salon
-sudo create <salon> : créer un salon
+sudo create <salon>: créer un salon
 sudo join <salon> : rejoindre un salon 
-sudo leave : quitter le salon
-sudo superadmin <password> : donne les privilèges à un utilisateur si il entre un password que seul les superadmins connaissent
+sudo leave : revient dans le salon général
+sudo superadmin <password> : donne les privilèges à l'utilisateur s'il entre le bon mot de passe
 
-Superadmin only:
-sudo modify <salon> : modifier un salon 
-sudo delete <salon> : supprimer un salon
-
+Liste des commandes disponibles seulement pour le superadmin:
+(modifier) sudo all <msg> : envoie un message à tous les clients connectés
+(timesleep pour un countdown) (à faire) sudo stop : arrête le serveur, en envoyant un message aux autres pour leur dire
 (modifier) sudo list : afficher sur le serveur et par salon
+sudo move <salon> <client> : déplace un client dans un autre salon
+sudo delete <salon>: supprimer un salon, il faut se situer dans le salon et avoir le role admin
+(salon) sudo modify : modifier un salon quand on est dans le salon, il faut se situer dans le salon et avoir le role admin

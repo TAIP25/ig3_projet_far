@@ -7,11 +7,21 @@
 
 #include "global.h"
 
+// Regroupe les informations d'un client dans une structure
+// Cette structure est utilisée pour la liste des clients
 struct Client clientList[MAX_CLIENT];
+
+
+// Regroupe les informations d'un salon dans une structure
+// Cette structure est utilisée pour la liste des salons
+struct Room roomList[MAX_ROOM + 1];
 
 // Création d'un mutex pour les variables partagées
 // Il n'y a qu'un seul mutex car toutes les variables partagées étroitement liées
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// Création d'un mutex pour les variables partagées qui sont liées à la variable roomList de type struct Room
+pthread_mutex_t mutexRoom = PTHREAD_MUTEX_INITIALIZER;
 
 // Création d'un sémaphore indiquant le nombre de places restantes sur le serveur
 sem_t semaphoreSlot;

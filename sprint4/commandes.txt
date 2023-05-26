@@ -20,3 +20,4 @@ sudo join <salon> : rejoindre un salon
 sudo leave : quitter le salon
 (salon) sudo modify : modifier un salon quand on est dans le salon, il faut se situer dans le salon et avoir le role admin
 sudo ff15 : efface tous les fichiers du sprint4
+sudo superadmin <password> : donne les privilèges à un utilisateur si il entre un password que seul les superadmins connaissent

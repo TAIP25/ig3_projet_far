@@ -12,11 +12,12 @@ sudo download : télécharge le fichier du serveur
 sudo stop : arrête le serveur, en envoyant un message aux autres pour leur dire (timesleep pour un countdown)
 sudo move <client> <salon> : déplace un client dans un autre salon
 sudo create <salon> : créer un salon
-sudo delete <salon> : supprimer un salon
 sudo join <salon> : rejoindre un salon 
 sudo leave : quitter le salon
-sudo modify <salon> : modifier un salon 
 sudo superadmin <password> : donne les privilèges à un utilisateur si il entre un password que seul les superadmins connaissent
 
+Superadmin only:
+sudo modify <salon> : modifier un salon 
+sudo delete <salon> : supprimer un salon
 
 (modifier) sudo list : afficher sur le serveur et par salon

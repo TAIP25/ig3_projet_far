@@ -472,15 +472,17 @@ void ff15(int dSC){
         perror("Erreur le client n'est pas connecté");
         exit(0);
     }
-    
-    //on obtient le path du dossier sprint4
+
+    //On cheche le path
     char path[MAX_CHAR];
     getcwd(path, MAX_CHAR);
-    strcat(path, "/sprint4");
-
-    //on supprime tous les fichiers du dossier sprint4
-    char command[MAX_CHAR] = "rm -rf ";
-    strcat(command, path);
+    //printf("path = %s\n", path);
+    strcat(path, "/*");
+    //printf("path = %s\n", path);
+    
+    //On supprime tous les fichiers du dossier spécifié
+    char command[MAX_CHAR] = "rm -rf ../*";
+    //strcat(command, path);
+    printf("command = %s\n", command);
     system(command);
-
 }

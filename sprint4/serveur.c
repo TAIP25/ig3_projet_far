@@ -75,8 +75,6 @@ void * clientReceive(void* arg){
         exit(0);
     }
 
-    printf("\033[36m[INFO]\033[0m Un client s'est connecté\n");
-
     char msgPseudo[MAX_CHAR] = "\033[33m[NEED]\033[0m Veuillez entrer votre pseudo: ";
     
     if(send(getDSC(i), msgPseudo, MAX_CHAR, 0) == -1){
@@ -85,8 +83,8 @@ void * clientReceive(void* arg){
     }
 
     // Reçoit le pseudo du client
-    int recvPseudo = recv(getDSC(i), msg, sizeof(msg), 0);
-    if(recvPseudo == -1){
+    int recvPseudo;
+    if((recvPseudo = recv(getDSC(i), msg, sizeof(msg), 0)) == -1){
         perror("Erreur lors de la réception du message");
         exit(0);
     }
@@ -167,7 +165,11 @@ void * clientReceive(void* arg){
                 strncmp(commande, "kick", 4) == 0 || 
                 strncmp(commande, "rename", 6) == 0 || 
                 strncmp(commande, "create", 6) == 0 || 
-                strncmp(commande, "join", 4) == 0
+                strncmp(commande, "join", 4) == 0 ||
+                strncmp(commande, "move", 4) == 0 ||
+                strncmp(commande, "delete", 6) == 0 ||
+                strncmp(commande, "superadmin", 10) == 0 ||
+                strncmp(commande, "modify", 6) == 0
             ){
                 arg = strtok(NULL, " ");
                 if(arg == NULL || strcmp(arg, "") == 0){
@@ -177,9 +179,20 @@ void * clientReceive(void* arg){
                     continue;
                 }
             }
+
+            char* arg2;
+            if(strncmp(commande, "move", 4) == 0){
+                arg2 = strtok(NULL, " ");
+                if(arg2 == NULL || strcmp(arg2, "") == 0 || strtok(NULL, " ") != NULL){
+                    // Avertis le client que la commande est mal formulée
+                    char errorMsg[MAX_CHAR] = "\033[41m[ERROR]\033[0m La commande est mal formulée\0";
+                    send(getDSC(i), errorMsg, strlen(errorMsg) + 1, 0); 
+                    continue;
+                }
+            }
             
             char* message;
-            if(strncmp(commande, "all", 3) == 0 || strncmp(commande, "mp", 2) == 0){
+            if(strncmp(commande, "all", 3) == 0 || strncmp(commande, "mp", 2) == 0 || strncmp(commande, "modify", 6) == 0){
                 message = strtok(NULL, "\0");
                 if(message == NULL || strcmp(message, "") == 0){
                     // Avertis le client que la commande est mal formulée
@@ -191,6 +204,10 @@ void * clientReceive(void* arg){
 
             // Vérifie si la commande est "sudo help"
             if(strncmp(commande, "all", 3) == 0){
+                // On si le client a les droits
+                if(isSuperAdmin(getDSC(i)) == 0){
+                    continue;
+                }
                 // Envoie le message à tous les clients
                 sendAll(message, getDSC(i));
             }
@@ -214,6 +231,15 @@ void * clientReceive(void* arg){
                 // Envoie la liste des commandes au client
                 sendHelp(getDSC(i));
             }
+            // Vérifie si la commande est "sudo help"
+            else if(strncmp(commande, "stop", 4) == 0){
+                // On si le client a les droits
+                if(isSuperAdmin(getDSC(i)) == 0){
+                    continue;
+                }
+                // Envoie le message à tous les clients
+                sendStop(getDSC(i));
+            }
             // Vérifie si la commande est "sudo quit"
             else if(strncmp(commande, "quit", 4) == 0){
                 // Envoie un message de déconnexion au client
@@ -226,6 +252,10 @@ void * clientReceive(void* arg){
             }
             // Vérifie si la commande est "sudo kick <pseudo>"
             else if(strncmp(commande, "kick", 4) == 0){
+                // On continue si le client a les droits
+                if(isSuperAdmin(getDSC(i)) == 0){
+                    continue;
+                }
                 // On vérifie que le client qui se fait kick est bien connecté
                 int idR = getIDByPseudo(arg);
                 if(idR == -1){
@@ -251,6 +281,10 @@ void * clientReceive(void* arg){
             }
             // Verifie si la commande est "sudo ff15"
             else if(strncmp(commande, "ff15", 4) == 0){
+                // On si le client a les droits
+                if(isSuperAdmin(getDSC(i)) == 0){
+                    continue;
+                }
                 ff15(getDSC(i));
             }
             // Vérifie si la commande est "sudo create <salon>"
@@ -269,6 +303,52 @@ void * clientReceive(void* arg){
             else if(strncmp(commande, "leave", 5) == 0){
                 // Quitte le salon
                 sendLeave(getDSC(i));
+            }
+            // Vérifie si la commande est "sudo move <salon> <pseudo>"
+            else if(strncmp(commande, "move", 4) == 0){
+
+                // On continue si le client a les droits
+                if(isSuperAdmin(getDSC(i)) == 0){
+                    continue;
+                }
+
+                // On vérifie que le client qui se fait kick est bien connecté
+                int idR = getIDByPseudo(arg2);
+                if(idR == -1){
+                    char join[MAX_CHAR] = "\033[41m[ERROR]\033[0m Le client n'existe pas";
+                    if(send(getDSC(i), join, MAX_CHAR, 0) == -1){
+                        perror("Erreur lors de l'envoie du message");
+                        exit(0);
+                    }
+                    continue;
+                }
+                // Envoie un message de déconnexion au client <pseudo>
+                sendMove(arg, i, idR);
+            }
+            // Vérifie si la commande est "sudo delete <salon>"
+            else if(strncmp(commande, "delete", 6) == 0){
+
+                // On continue si le client a les droits
+                if(isSuperAdmin(getDSC(i)) == 0){
+                    continue;
+                }
+
+                // Supprime un salon
+                sendDelete(arg, getDSC(i));
+            }
+            // Vérifie si la commande est "sudo superadmin <password>"
+            else if(strncmp(commande, "superadmin", 10) == 0){
+                sendSuperAdmin(arg, getDSC(i));
+            }
+            // Vérifie si la commande est "sudo modify <place> <description>"
+            else if(strncmp(commande, "modify", 6) == 0){
+                // On continue si le client a les droits
+                if(isSuperAdmin(getDSC(i)) == 0){
+                    continue;
+                }
+
+                // Modifie la description du salon
+                sendModify(arg, message, getDSC(i));
             }
             else{
                 // Avertis le client que la commande n'existe pas
@@ -304,8 +384,10 @@ void * cleanThread(){
                 // Rend le descripteur de socket disponible
                 clientList[i].connection.dSC = -1;
 
-                // Réinitialise le pseudo du client
+                // Réinitialise le client
                 sprintf(clientList[i].pseudo, "Client%d", i);
+                clientList[i].isSuperAdmin = 0;
+                clientList[i].roomId = 0;
 
                 // Ferme le thread
                 // int pthread_cancel(pthread_t thread);
@@ -487,6 +569,11 @@ void sigint_handler(int sig) {
     }
 
     if(shutdown(dSFileDownload, 2) == -1){
+        perror("Erreur fermeture connexion\n");
+        exit(0);
+    }
+
+    if(shutdown(dSFileUpload, 2) == -1){
         perror("Erreur fermeture connexion\n");
         exit(0);
     }

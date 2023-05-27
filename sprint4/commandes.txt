@@ -3,7 +3,6 @@ sudo help : affiche la liste des commandes disponibles
 sudo mp <pseudo> <msg> : envoie un message privé au client <pseudo>
 sudo quit : déconnecte le client du serveur
 (modifier) sudo list : afficher les clients connectés sur le serveur et par salon
-(modifier) sudo kick <pseudo> : déconnecte le client <pseudo> du serveur
 sudo rename <pseudo> : renomme le client
 sudo upload : envoie le fichier au serveur 
 sudo download : télécharge le fichier du serveur
@@ -13,9 +12,12 @@ sudo leave : revient dans le salon général
 sudo superadmin <password> : donne les privilèges à l'utilisateur s'il entre le bon mot de passe
 
 Liste des commandes disponibles seulement pour le superadmin:
-(modifier) sudo all <msg> : envoie un message à tous les clients connectés
+sudo kick <pseudo> : déconnecte le client <pseudo> du serveur
+sudo all <msg> : envoie un message à tous les clients connectés
 (timesleep pour un countdown) (à faire) sudo stop : arrête le serveur, en envoyant un message aux autres pour leur dire
-(modifier) sudo list : afficher sur le serveur et par salon
-sudo move <salon> <client> : déplace un client dans un autre salon
+sudo move <salon> <pseudo> : déplace un client dans un autre salon
 sudo delete <salon>: supprimer un salon, il faut se situer dans le salon et avoir le role admin
-(salon) sudo modify : modifier un salon quand on est dans le salon, il faut se situer dans le salon et avoir le role admin
+sudo modify <place> <description>: modifier un salon, il faut se situer dans le salon et avoir le role superadmin
+
+TODO:
+(à faire) un fichier qui sauvegarder les nom/description des salons

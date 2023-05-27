@@ -143,4 +143,21 @@ void sendMove(char* roomName, int dSCS, int dSCR);
 // post: Attention, si le client n'est pas connecté, une erreur est throw
 void sendSuperAdmin(char* password, int dSC);
 
+// Vérifie si le client a les droits de superadmin
+// pre: isConnected(dSC) == 1
+// post: Renvoie 1 si le client a les droits de superadmin, 0 sinon
+int isSuperAdmin(int dSC);
+
+// Appelé quand le client envoie la commande "sudo modify <place> <description>"
+// pre: isConnected(dSC) == 1
+// post: !(0 < place < MAX_CLIENT) || atoi(place) == 0 => pas de modification 
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+void sendModify(char* place, char* description, int dSC);
+
+// Appelé quand le client envoie la commande "sudo stop"
+// pre: isConnected(dSC) == 1
+// pre: isSuperAdmin(dSC) == 1
+// post: Attention, si le client n'est pas connecté, une erreur est throw
+void sendStop(int dSC);
+
 #endif

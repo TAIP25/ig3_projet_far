@@ -339,12 +339,6 @@ void sigint_handler(int sig) {
     if(send(client_socket, messageStop, strlen(messageStop) + 1 , 0) == -1){
         perror("Erreur lors de l'envoi du message");
     }
-
-    if(close(client_socket) == -1 && close(upload_socket) == -1 && close(download_socket) == -1){
-        perror("Erreur lors de la fermeture de la socket");
-    }
-
-    exit(0);
 }
 
 

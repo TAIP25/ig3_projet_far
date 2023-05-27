@@ -10,7 +10,6 @@ sudo create <salon>: créer un salon
 sudo join <salon> : rejoindre un salon 
 sudo leave : revient dans le salon général
 sudo superadmin <password> : donne les privilèges à l'utilisateur s'il entre le bon mot de passe
-
 Liste des commandes disponibles seulement pour le superadmin:
 sudo kick <pseudo> : déconnecte le client <pseudo> du serveur
 sudo all <msg> : envoie un message à tous les clients connectés

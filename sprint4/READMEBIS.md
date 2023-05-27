@@ -12,6 +12,9 @@ Commande ff qui supprime tous les fichiers du sprint 4 (Wayne)
 Commande permettant de déconnecter un client en particulier (fait)
 Gestion propre du signal d’interruption (Ctrl+C) (fait)
 
+TODO:
+(à faire) un fichier qui sauvegarder les nom/description des salons
+
 ## Table des matières
 
 **1. [Description du projet](#description-du-projet)**

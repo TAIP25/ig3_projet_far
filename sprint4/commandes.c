@@ -572,12 +572,12 @@ int createRoom(char* roomName, int nbMaxClient){
     }
 }
 
-// Appelé quand le client envoie la commande "sudo create <salon> <nbMaxClient>"
+// Appelé quand le client envoie la commande "sudo create <salon>"
 // pre: isConnected(dSC) == 1
 // post: Attention, si le client n'est pas connecté, une erreur est throw
 // post: Si la room existe déjà, la commande est annulée
 // post: Attention, si la création de la room échoue, une erreur est throw
-void sendCreate(char* roomName, int nbMaxClient, int dSC){
+void sendCreate(char* roomName, int dSC){
     if(isConnected(dSC) == 0){
         perror("Erreur le client n'est pas connecté");
         exit(0);
@@ -594,7 +594,7 @@ void sendCreate(char* roomName, int nbMaxClient, int dSC){
     }
     
     // On crée la room
-    if(createRoom(roomName, nbMaxClient) != 0){
+    if(createRoom(roomName, MAX_CLIENT) != 0){
         char create[MAX_CHAR] = "\033[42m[SUCCESS]\033[0m La room a été créée";
         if(send(dSC, create, MAX_CHAR, 0) == -1){
             perror("Erreur lors de l'envoie du message");

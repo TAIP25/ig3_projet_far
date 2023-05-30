@@ -323,7 +323,7 @@ void * clientReceive(void* arg){
                     continue;
                 }
                 // Envoie un message de déconnexion au client <pseudo>
-                sendMove(arg, i, idR);
+                sendMove(arg, getDSC(i), getDSC(idR));
             }
             // Vérifie si la commande est "sudo delete <salon>"
             else if(strncmp(commande, "delete", 6) == 0){

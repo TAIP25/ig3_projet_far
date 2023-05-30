@@ -202,14 +202,12 @@ sequenceDiagram
 
     loop Tant que le client lambda est connecté
 
-
-
         par Mise en place de la connexion d'un client lambda
             ClientLambda->>ClientLambda: Lancements des threads de réception et d'envoi
             Serveur-->>ClientLambda: Demande de pseudo
             ClientLambda->>Serveur: Envoi du pseudo
             Serveur->>Serveur: Mise à jour du pseudo
-            Serveur-->>ClientLambda: Message de bienvenue
+            Serveur-->>ClientLambda: Message de bienvenue + Message du salon général
         and
             Serveur->>Serveur: Mise à jour du tableau de sockets
             Serveur->>Serveur: Lancement du thread qui gère la réception et l'envoi des messages du client lambda
@@ -220,31 +218,53 @@ sequenceDiagram
         activate AutresClients
 
         alt Si le message est une commande (hors sudo upload et sudo download)
+
             ClientLambda->>Serveur: Envoi d'un message
             Serveur->>Serveur: Vérification du message
             Serveur->>Serveur: Découpage du message en token
             Serveur->>Serveur: Vérification de la commande
             Serveur->>Serveur: Exécution de la commande
-            
-            alt Si la commande est un sudo mp
-                Serveur->>Serveur: Vérification de l'existence du destinataire
-                Serveur-->>AutresClients: Envoi du message au destinataire
-            else Si la commande est un sudo all
-                Serveur-->>AutresClients: Diffusion du message aux autres clients (broadcast)
-            else Si la commande est un sudo help ou sudo list
-                Serveur-->>ClientLambda: Envoi de la liste des commandes ou des clients connectés
-            else Si la commande est un sudo kick ou sudo quit
-                Serveur->>Serveur: Vérification de l'existence du destinataire
-                alt Si la commande est un sudo kick
-                    Serveur->>Serveur: Vérification de l'existence de expéditeur
-                    Serveur-->>ClientLambda: Préviens le destinataire qu'il va être déconnecté
-                else Si la commande est un sudo quit (ou le programme client se ferme à l'aide de ctrl+c)
-                    Serveur-->>ClientLambda: Préviens le destinataire qu'il va être déconnecté
-                end
-                Serveur->>Serveur: Suppression de la connexion du destinataire
-                Serveur->>Serveur: Ajout d'un jeton dans le sémaphore qui gère le nombre de connexion
-                Serveur->>Serveur: Nettoyage du thread du destinataire dans la mémoire partagée
+            Serveur->>Serveur: Vérifie l'existence de des clients en jeu dans la commande
+
+            alt Si la commande nécessite d'être un admin
+                Serveur->>Serveur: Vérifie si le destinataire est un superadmin
             end
+            alt Si la commande est sudo create <salon>
+                Serveur->>Serveur: Vérifie si le salon existe déjà
+                Serveur->>Serveur: Création du salon
+                Serveur->>Serveur: Appelle la fonction sudo join <salon>
+            else Si la commande est un sudo join <salon>
+                Serveur->>Serveur: Vérifie si le salon n'existe pas
+                Serveur->>Serveur: Vérifie si le salon est plein
+                Serveur->>Serveur: Vérifie si le client lambda est déjà dans le salon
+                Serveur->>Serveur: Met à jour le client lambda
+            else Si la commande est un sudo leave
+                Serveur->>Serveur: Met à jour le client lambda
+            else Si la commande est un sudo move <salon> <pseudo>
+                Serveur->>Serveur: Vérifie si le salon n'existe pas
+                Serveur->>Serveur: Vérifie si le client lambda est déjà dans le salon
+                Serveur->>Serveur: Appelle la fonction sudo join <salon>
+            else Si la commande est sudo delete <salon>
+                Serveur->>Serveur: Vérifie si le salon existe
+                Serveur->>Serveur: Vérifie si ce n'est pas le salon général
+                Serveur->>Serveur: Supprime le salon
+                Serveur->>Serveur: Appelle la fonction ~sudo leave
+            else Si la commande est sudo modify <place> <description>
+                Serveur->>Serveur: Vérifie si la place est valide
+                Serveur->>Serveur: Vérifie si la description est valide
+                Serveur->>Serveur: Vérifie si ce n'est pas le salon général
+                Serveur->>Serveur: Modifie la place et la description
+            else Si la commande est basique
+                Serveur->>Serveur: Effectue la commande
+            end
+
+            Serveur-->>ClientLambda: Envoi une information sur le résultat de la commande
+
+            opt Si il affecte des autres clients
+                Serveur-->>AutresClients: Envoi une information sur le résultat de la commande
+                Serveur-->>AutresClients: (opt) Change l'état des clients
+            end
+
         else Si la commande est un sudo upload
             ClientLambda->>ClientLambda: Connexion au serveur sur le port upload
             ClientLambda->>ClientLambda: Choix du fichier à envoyer
@@ -270,6 +290,7 @@ sequenceDiagram
         deactivate AutresClients
 
         break Le client lambda est déconnecté (avec la commande sudo quit/kick ou ctrl+c)
+            Serveur-->>ClientLambda: Préviens le destinataire qu'il va être déconnecté
             ClientLambda->>Serveur: Déconnexion du client lambda
             Serveur->>Serveur: Suppression de la connexion du client lambda
             Serveur->>Serveur: Ajout d'un jeton dans le sémaphore qui gère le nombre de connexion
@@ -304,12 +325,12 @@ v3 : Le serveur donne la possibilité à un client de créer, modifier et suppri
 Commande permettant de savoir qui est présent sur le serveur et dans les salons (Léon)
 Commande permettant de déplacer quelqu’un vers un salon (Léon)
 Bonus mettre en place un mots de passe admin pour exécuter des commandes spéciales (kick, stop, delete, move, modify) (Léon)
+Commande permettant d’envoyer un message dans tous les salons (Léon)
 
 Censure message (ex :  suppression des insultes) (Wayne)
 Commande ff qui supprime tous les fichiers du sprint 4 (Wayne)
-
-Commande permettant de déconnecter un client en particulier (fait)
-Gestion propre du signal d’interruption (Ctrl+C) (fait)
+Commande permettant de déconnecter un client en particulier (Wayne)
+Gestion propre du signal d’interruption (Ctrl+C) (Wayne)
 
 
 ## Compilation et exécution

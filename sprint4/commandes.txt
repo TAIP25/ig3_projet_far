@@ -15,5 +15,5 @@ sudo kick <pseudo> : déconnecte le client <pseudo> du serveur
 sudo all <msg> : envoie un message à tous les clients connectés
 sudo stop : arrête le serveur, en envoyant un message aux autres pour leur dire
 sudo move <salon> <pseudo> : déplace un client dans un autre salon
-sudo delete <salon>: supprimer un salon, il faut se situer dans le salon et avoir le role admin
-sudo modify <place> <description>: modifier un salon, il faut se situer dans le salon et avoir le role superadmin
+sudo delete <salon> : supprimer un salon
+sudo modify <place> <description>: modifier un salon, il faut se situer dans le salon

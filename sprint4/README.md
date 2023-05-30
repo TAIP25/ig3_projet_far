@@ -52,28 +52,28 @@ Ajout de nouvelles commandes (se référer au fichier commandes.txt pour voir la
 
 ### **`commandes.txt`**
 
-Tout d'abord il y a le fichier **`commandes.txt`** qui contient toutes les commandes que l'on peut utiliser dans le programme et qui est utilisé pour la commande help.
+Tout d'abord il y a le fichier **`commandes.txt`** qui contient toutes les commandes que l'on peut utiliser dans le programme et qui est utilisé pour la commande help. Il est partagé en deux parties, la première partie contient les commandes qui sont utilisées par le client et la deuxième partie contient les commandes qui sont utilisées par le superadmin.
 
 ### **`commandes.c`** et **`commandes.h`**
 
 Pour nous organiser nous avons détaché la partie commande du projet dans un fichier différent qui s'appelle **`commandes.c`** et **`commandes.h`**.
-Ils contiennent les différentes commandes explicitées dans le fichier **`commandes.txt`**.
-Cela permet de mieux organiser le code et de mieux comprendre le fonctionnement du programme et que le fichier **`serveur.c`** soit plus compact.
+Ils contiennent les différentes commandes explicitées dans le fichier **`commandes.txt`**. Avec des fonctions secondaires qui sont utilisées par les commandes.
+Cela permet de mieux organiser le code et de mieux comprendre le fonctionnement du programme et que le fichier **`serveur.c`** soit plus compact. Lors de ce dernier sprint, nous avons ajouté la v3 des salons de discussion (mise à par la sauvegarde des salons de discussion dans un fichier lors de l'arrêt du serveur).
 
 ### **`global.c`** et **`global.h`**
 
 Les variables globales sont dans le fichier **`global.c`** et **`global.h`**.
 Il y a des variables/constantes qui sont utilisées dans **`client.c`**, **`serveur.c`** et **`commandes.c`** ou que dans **`serveur.c`** et **`commandes.c`**. 
-Cela permet de modifier qu'une seule fois une variable globale si on veut changer sa valeur ou cela permet d'avoir des fonctions en commun entre **`client.c`** et **`serveur.c`** comme la fonction **`fileExist()`**.
+Cela permet de modifier qu'une seule fois une variable globale si on veut changer sa valeur ou cela permet d'avoir des fonctions en commun entre **`client.c`** et **`serveur.c`** comme la fonction **`fileExist()`**. Il y a aussi les structures qui sont utilisées dans **`commandes.c`** et **`serveur.c`**.
 
 ### **`client.c`**
 
-Ce fichier contient le code du client. Nous avons ajouté les fonctions, les threads pour l'envoi et la récupération de fichier. Ces commandes nécessitent l'ouverture de 2 nouveaux ports pour le download et upload de fichiers. Par conséquent lorsqu'un client download ou upload un fichier, il ouvre un nouveau socket, connexion et port associé à cette action dans un thread ce qui permet de continuer à utiliser le client et de ne pas bloquer le client puis la connexion se ferme une fois l'action terminée.
+Ce fichier contient le code du client. Nous avons ajouté les fonctions, les threads pour l'envoi et la récupération de fichier. Ces commandes nécessitent l'ouverture de 2 nouveaux ports pour le download et upload de fichiers. Par conséquent lorsqu'un client download ou upload un fichier, il ouvre un nouveau socket, connexion et port associé à cette action dans un thread ce qui permet de continuer à utiliser le client et de ne pas bloquer le client puis la connexion se ferme une fois l'action terminée. Sur ce dernier sprint il y a aussi la gestion des insultes (remplacement des insultes par des étoiles) qui se trouve dans le fichier **`insultes.txt`**.
 
 ### **`serveur.c`**
 
 Ce fichier contient le code du serveur.
-Nous avons ajouté les fonctions, les threads pour l'envoi et la récupération de fichier. Ils sont sensiblement les mêmes que ceux du client mais inversés. Lorsque le serveur démarre il écoute sur 2 nouveaux ports qui sont les 2 suivantes du port classique du serveur qui est passé en paramètre.
+Nous avons ajouté les fonctions, les threads pour l'envoi et la récupération de fichier. Ils sont sensiblement les mêmes que ceux du client mais inversés. Lorsque le serveur démarre il écoute sur 2 nouveaux ports qui sont les 2 suivantes du port classique du serveur qui est passé en paramètre. Lors de ce dernier sprint, nous avons controlé sur les commandes qui nécessitent le rôle superadmin.
 
 ### **`transferServer`** et **`transferClient`**
 
@@ -289,20 +289,20 @@ sequenceDiagram
 
 Maintenant que les plus gros examens sont passés, nous avons le temps de se concentrer sur les projets en vue de la soutenance. Ayant jusqu'à la soutenance pour effectuer toutes les modifications que l'on veut, la pression de respecter un délai est moins lourde vu que les fonctionnalités essentielles ont été implémentées dans les sprints précédents.
 
-Ainsi pour ce sprint, la seule difficulté a été de comprendre comment l'implémentation de salons de discussion devait se faire. Une fois partis, nous n'avons pas eu d'obstacles importants.
+Ainsi pour ce sprint, la seule difficulté a été de comprendre comment l'implémentation de salons de discussion devait se faire. La seule difficultée a été de savoir comment implémenter la struct salon. Une fois que nous avons compris comment faire, le reste s'est fait naturellement.
 
 ## Répartition du travail
 
 Tout d'abord avant de coder, nous avons décidé en amont comment chaque étape clé devrait être traitée pour donner des indications claires à chacun de nous. Vu que le travail en parallèle a bien fonctionné tout au long du projet, donc nous sommes restés sur la même optique. Puis la répartition du travail s'est faite de manière à pouvoir travailler continuellement en parallèle afin de finir le code le plus tot possible pour bien préparer la soutenance. Pour cette partie, nous sommes directement passés à la v3.
 
-Pour ce sprint Wayne est resté sur la partie client et Léon sur la partie serveur. Wayne s'est occupé de la censure de messages d'insultes ainsi que l'implémentation des nouvelles commandes. Léon s'est occupé de la création des salons ainsi que les commandes concernant le salon: modifier, supprimer, move, role admin.
+Pour ce sprint Wayne est resté sur la partie client et Léon sur la partie serveur. Wayne s'est occupé de la censure de messages d'insultes ainsi que l'implémentation des nouvelles commandes. 
+Léon s'est occupé de la création des salons ainsi que les commandes concernant le salon: modifier, supprimer, move, role admin.
 
 Il a été primordial de travailler l'un a coté de l'autre pour ne pas avoir de blocage et avancer plus rapidement. Une fois que le code a été fait, nous avons fait des test chacun de notre coté pour vérifier qu'il n'y ait aucun problème.
 
-v3 : Le serveur donne la possibilité à un client de créer, modifier et supprimer une chaîne de discussion. ( il faudra stocker les salons dans un fichier pour les sauvegarder même après un redémarrage ) (Léon)
+v3 : Le serveur donne la possibilité à un client de créer, modifier et supprimer une chaîne de discussion. (Léon)
 Commande permettant de savoir qui est présent sur le serveur et dans les salons (Léon)
 Commande permettant de déplacer quelqu’un vers un salon (Léon)
-(Commande permettant d’envoyer un message dans tous les salons) (Léon)
 Bonus mettre en place un mots de passe admin pour exécuter des commandes spéciales (kick, stop, delete, move, modify) (Léon)
 
 Censure message (ex :  suppression des insultes) (Wayne)

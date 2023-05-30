@@ -996,7 +996,7 @@ void sendModify(char* place, char* description, int dSC){
     }
 
     // On vérifie que la place est valide
-    if(!(0 < placeInt && placeInt < MAX_CLIENT)){
+    if(!(0 < placeInt && placeInt < MAX_ROOM + 1)){
         char join[MAX_CHAR] = "\033[41m[ERROR]\033[0m Place invalide";
         if(send(dSC, join, MAX_CHAR, 0) == -1){
             perror("Erreur lors de l'envoie du message");

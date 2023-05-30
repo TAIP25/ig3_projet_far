@@ -104,7 +104,7 @@ flowchart TB
             sThreadClient --> sThreadClear
             sThreadPrincipal --> sThreadClient[Threads clients]            
             sThreadPrincipal --> sThreadClear[Thread clear]            
-            sThreadPrincipal[Thread principal] --> sThreadDownload[Thread download]            
+            sThreadPrincipal[Fonction main] --> sThreadDownload[Thread download]            
             sThreadPrincipal --> sThreadUpload[Thread upload] 
         end
 
@@ -117,13 +117,14 @@ flowchart TB
         fichierclient --> programmeclient
 
         subgraph programmeclient[Programme client]
-            cThreadPrincipal[Thread principal] --> cThreadUpload[Thread upload]
+            cThreadPrincipal[Fonction main] --> cThreadUpload[Thread upload]
             cThreadPrincipal --> cThreadDownload[Thread download]
+            cThreadPrincipal --> cThreadMSGSend[Thread envoi de message]
+            cThreadPrincipal --> cThreadMSGReceive[Thread reception de message]
         end
 
         fichierclient[(Fichier client)]
     end
-
 ```
 
 ### Explication du diagramme de séquence

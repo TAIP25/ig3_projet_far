@@ -10,6 +10,8 @@
 #include "global.h"
 #include "commandes.h"
 
+#define banwordfile "motsInterdit.txt"
+
 
 char ip[16];
 int port;
@@ -24,7 +26,7 @@ char filename[MAX_CHAR];
 void checkInsulte(char *message){
 
     // Les insultes sont stockées dans le fichier insultes.txt
-    FILE* file = fopen("insultes.txt", "r");
+    FILE* file = fopen(banwordfile, "r");
     if(file == NULL){
         perror("Erreur lors de l'ouverture du fichier insultes.txt");
         exit(0);

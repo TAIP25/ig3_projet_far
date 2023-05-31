@@ -215,6 +215,7 @@ sequenceDiagram
         end
 
         ClientLambda->>ClientLambda: Entre un message
+        ClientLambda->>ClientLambda: Vérification du message (Si le message est trop long ou si le message contient des insultes)
 
         activate AutresClients
 

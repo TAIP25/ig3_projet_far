@@ -42,7 +42,8 @@ struct Room {
     // Nom du salon
     char name[MAX_PSEUDO];
     // Nombre de clients maximum dans le salon
-    // 0 signifie que la room n'est pas utiliséePRO
+    // 0 signifie que la room n'est pas utilisée
+    // Ici pas besoin d'initialiser nbClient à 0 car NULL == 0
     int nbClient;
     // Description du salon
     char description[MAX_DESCRIPTION];

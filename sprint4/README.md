@@ -117,9 +117,9 @@ flowchart TB
         fichierclient --> programmeclient
 
         subgraph programmeclient[Programme client]
-            cThreadPrincipal[Fonction main] --> cThreadUpload[Thread upload]
-            cThreadPrincipal --> cThreadDownload[Thread download]
-            cThreadPrincipal --> cThreadMSGSend[Thread envoi de message]
+            cThreadMSGSend --> cThreadUpload[Thread upload]
+            cThreadMSGSend --> cThreadDownload[Thread download]
+            cThreadPrincipal[Fonction main] --> cThreadMSGSend[Thread envoi de message]
             cThreadPrincipal --> cThreadMSGReceive[Thread reception de message]
         end
 

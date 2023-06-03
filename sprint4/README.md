@@ -88,6 +88,9 @@ Le diagramme de l'architecture ci-dessous explique le fonctionnement du serveur 
 ### Architecture du projet
 
 ```mermaid
+---
+title: Description générale de notre application de messagerie
+---
 flowchart TB
     
     programmeServeur --> programmeclient
